@@ -155,8 +155,24 @@ class ProcessManager:
                         f"Server not reachable at {base_url} — {status}"
                     )
 
-        # --- Data files ---
+        # --- Evaluator probe coverage ---
         data_dir = Path(self._project_root / config_dict.get("data", {}).get("directory", "data"))
+        try:
+            from apex.libraries import ProbeLibrary
+            lib = ProbeLibrary(data_dir)
+            evaluator_count = sum(
+                1 for p in lib.probes.values()
+                if p.score_method.value == "evaluator"
+            )
+            if evaluator_count > 0 and not eval_models:
+                warnings.append(
+                    f"{evaluator_count} probes use evaluator scoring but no evaluator "
+                    f"model configured — these will produce NULL scores"
+                )
+        except Exception:
+            pass  # Library not loadable yet — data files check below will catch it
+
+        # --- Data files ---
         filler_dir = data_dir / "filler"
         probes_dir = data_dir / "probes"
 
@@ -295,6 +311,79 @@ class ProcessManager:
                     info.status = "crashed" if error_text else "finished"
                     info.error_output = error_text
         return sorted(self._runs.values(), key=lambda r: r.start_time, reverse=True)
+
+
+    def start_rescore(
+        self,
+        db_url: str,
+        data_dir: str = "data",
+        evaluator_backend: str | None = None,
+        evaluator_model: str | None = None,
+        evaluator_url: str | None = None,
+        null_only: bool = True,
+        model_filter: str | None = None,
+    ) -> tuple[str, RunInfo]:
+        """Spawn a rescore subprocess and track it like a run."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_id = f"rescore_{timestamp}"
+
+        python = str(self._venv_python) if self._venv_python.exists() else "python"
+
+        cmd = [python, "-m", "apex", "rescore", db_url, "--data-dir", data_dir]
+        if evaluator_backend and evaluator_model:
+            cmd += ["--evaluator-backend", evaluator_backend, "--evaluator-model", evaluator_model]
+            if evaluator_url:
+                cmd += ["--evaluator-url", evaluator_url]
+        if null_only:
+            cmd.append("--null-only")
+        if model_filter:
+            cmd += ["--model", model_filter]
+
+        stderr_path = self._configs_dir / f"{run_id}.stderr"
+        stderr_file = open(stderr_path, "w")
+
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(self._project_root),
+            stdout=subprocess.DEVNULL,
+            stderr=stderr_file,
+            start_new_session=True,
+        )
+
+        summary = f"rescore | null_only={null_only}"
+        if evaluator_backend:
+            summary += f" | evaluator={evaluator_backend}/{evaluator_model}"
+        if model_filter:
+            summary += f" | model={model_filter}"
+
+        info = RunInfo(
+            run_id=run_id,
+            pid=proc.pid,
+            config_path="",
+            config_summary=summary,
+            start_time=datetime.now(),
+            status="running",
+        )
+        self._runs[run_id] = info
+        self._processes[run_id] = proc
+        self._stderr_files[run_id] = str(stderr_path)
+
+        # Grace period
+        time.sleep(2)
+        exit_code = proc.poll()
+        if exit_code is not None:
+            stderr_file.close()
+            error_text = ""
+            try:
+                error_text = Path(stderr_path).read_text().strip()
+            except OSError:
+                pass
+            info.status = "crashed"
+            info.error_output = error_text
+        else:
+            stderr_file.close()
+
+        return run_id, info
 
 
 def _pid_alive(pid: int) -> bool:

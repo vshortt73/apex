@@ -199,8 +199,43 @@ python -m apex run <config.yaml>        # Execute a probe run
 python -m apex validate <config.yaml>   # Validate config without running
 python -m apex status <db>              # Show run progress and statistics
 python -m apex export <db> -o out.json  # Export results to JSON
+python -m apex rescore <db>             # Rescore existing results (see below)
 python -m apex dashboard [db]           # Launch interactive dashboard
+python -m apex migrate <sqlite_file>    # Migrate SQLite results to PostgreSQL
 ```
+
+### Rescore
+
+Re-run scoring on existing results without re-running inference. Useful when scoring logic has been updated, or when evaluator-scored probes failed during a run (e.g., evaluator server was unreachable, producing NULL scores).
+
+```bash
+# Rescore all programmatic + exact_match results (no evaluator needed)
+python -m apex rescore results.db --data-dir data
+
+# Rescore only NULL evaluator results with an evaluator model
+python -m apex rescore postgresql://user@localhost:5432/apex \
+  --evaluator-backend llamacpp \
+  --evaluator-model Qwen_Qwen3-30B-A3B-Q4_K_M \
+  --evaluator-url http://node2:8080 \
+  --null-only
+
+# Preview changes without writing
+python -m apex rescore results.db --dry-run
+
+# Filter by model and score method
+python -m apex rescore results.db --model my-model --score-method evaluator --null-only
+```
+
+| Flag | Description |
+|------|-------------|
+| `--data-dir` | Path to probe/filler/query data directory (default: `data`) |
+| `--dry-run` | Preview score changes without writing to the database |
+| `--evaluator-backend` | Backend for evaluator model (`llamacpp`, `ollama`, `openai`, etc.) |
+| `--evaluator-model` | Evaluator model name |
+| `--evaluator-url` | Evaluator server base URL |
+| `--model` | Filter results by model_id |
+| `--score-method` | Which methods to rescore: `all`, `evaluator`, `programmatic`, `exact_match` |
+| `--null-only` | Only rescore results where score IS NULL |
 
 ## Configuration
 
@@ -262,7 +297,7 @@ APEX is designed for long overnight runs. If interrupted:
 python -m pytest tests/ -v
 ```
 
-85 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
+86 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, rescore, dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
 
 ## Design Principles
 
@@ -276,4 +311,4 @@ python -m pytest tests/ -v
 
 ## Project
 
-APEX v1.0.0 — ~8,000 lines of Python across 46 source files, 85 tests, 10-tab interactive dashboard.
+APEX v1.0.0 — ~8,000 lines of Python across 46 source files, 86 tests, 10-tab interactive dashboard.

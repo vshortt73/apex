@@ -281,6 +281,21 @@ def layout(dashboard_config=None) -> html.Div:
 
         # === Active Runs ===
         html.Div(id="runctl-active-runs"),
+
+        # === Rescore ===
+        html.Div([
+            html.H4("Rescore NULL Results", style={"marginTop": "0", "marginBottom": "12px"}),
+            html.Div(id="runctl-rescore-status", style={"marginBottom": "12px"}),
+            html.Button(
+                "Rescore NULL Results", id="runctl-rescore-btn", n_clicks=0,
+                style={
+                    **_BTN_STYLE,
+                    "backgroundColor": WONG["purple"], "color": "#000",
+                    "padding": "8px 20px", "fontSize": "14px",
+                },
+            ),
+            html.Div(id="runctl-rescore-feedback", style={"marginTop": "12px"}),
+        ], style=CARD_STYLE),
     ])
 
 
@@ -737,6 +752,90 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
             html.H4("Run History", style={"marginTop": "0", "marginBottom": "12px"}),
             *items,
         ], style=CARD_STYLE)
+
+    # Rescore status — show count of NULL evaluator-scored results
+    @app.callback(
+        Output("runctl-rescore-status", "children"),
+        Input("runctl-interval", "n_intervals"),
+    )
+    def rescore_status(_n):
+        try:
+            conn = qm._connect()
+            try:
+                if qm._is_postgres:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "SELECT COUNT(*) FROM probe_results"
+                            " WHERE score_method = 'evaluator' AND score IS NULL"
+                        )
+                        null_count = cur.fetchone()[0]
+                else:
+                    cur = conn.execute(
+                        "SELECT COUNT(*) FROM probe_results"
+                        " WHERE score_method = 'evaluator' AND score IS NULL"
+                    )
+                    null_count = cur.fetchone()[0]
+            finally:
+                qm._release(conn)
+        except Exception:
+            return html.Span("Could not query NULL evaluator results.", style={"color": TEXT_MUTED, "fontSize": "13px"})
+
+        if null_count == 0:
+            return html.Span(
+                "No NULL evaluator-scored results.",
+                style={"color": TEXT_MUTED, "fontSize": "13px"},
+            )
+        return html.Span(
+            f"{null_count} evaluator-scored result(s) with NULL score — ready to rescore.",
+            style={"color": WONG["orange"], "fontWeight": "600", "fontSize": "13px"},
+        )
+
+    # Rescore button
+    @app.callback(
+        Output("runctl-rescore-feedback", "children"),
+        Input("runctl-rescore-btn", "n_clicks"),
+        State("runctl-evaluator-store", "data"),
+        prevent_initial_call=True,
+    )
+    def launch_rescore(n_clicks, evaluator_models):
+        if not evaluator_models:
+            return html.Span(
+                "Set an evaluator model above before rescoring.",
+                style={"color": WONG["orange"]},
+            )
+
+        ev = evaluator_models[0]
+        db_url = cfg.resolve_database_url()
+        try:
+            run_id, info = process_manager.start_rescore(
+                db_url=db_url,
+                evaluator_backend=ev.get("backend"),
+                evaluator_model=ev.get("model_name"),
+                evaluator_url=ev.get("base_url"),
+                null_only=True,
+            )
+        except Exception as e:
+            return html.Span(f"Rescore launch failed: {e}", style={"color": WONG["vermillion"]})
+
+        if info.status == "crashed":
+            lines = (info.error_output or "No output").strip().splitlines()[-10:]
+            return html.Div([
+                html.Span(
+                    f"Rescore {run_id} crashed (PID {info.pid}):",
+                    style={"color": WONG["vermillion"], "fontWeight": "700"},
+                ),
+                html.Pre("\n".join(lines), style={
+                    "whiteSpace": "pre-wrap", "fontSize": "12px",
+                    "backgroundColor": "#1a1a30", "color": "#d0d0e0",
+                    "padding": "8px", "borderRadius": "4px",
+                    "border": f"1px solid {BORDER_COLOR}", "marginTop": "8px",
+                }),
+            ])
+
+        return html.Span(
+            f"Rescore launched: {run_id} (PID {info.pid})",
+            style={"color": WONG["green"], "fontWeight": "600"},
+        )
 
     # Sync form defaults when settings are saved
     @app.callback(

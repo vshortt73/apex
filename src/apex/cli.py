@@ -107,22 +107,63 @@ def cmd_rescore(args: argparse.Namespace) -> None:
     dsn = _resolve_dsn(args.db)
     store = ResultStore(dsn)
     library = ProbeLibrary(args.data_dir)
-    dispatcher = ScoringDispatcher(evaluator_adapter=None)
 
-    # Fetch all results that use programmatic or exact_match scoring
-    rows = store.query_results()
-    rescoreable = [
-        r for r in rows
-        if r["score_method"] in ("programmatic", "exact_match")
-    ]
+    # Build evaluator adapter if args provided
+    evaluator_adapter = None
+    if getattr(args, "evaluator_backend", None) and getattr(args, "evaluator_model", None):
+        from apex.models.base import get_adapter
+        evaluator_adapter = get_adapter(
+            backend=args.evaluator_backend,
+            model_name=args.evaluator_model,
+            base_url=getattr(args, "evaluator_url", None),
+        )
+
+    dispatcher = ScoringDispatcher(evaluator_adapter=evaluator_adapter)
+
+    # Determine which score methods to rescore
+    score_method_filter = getattr(args, "score_method", "all")
+    if score_method_filter == "all":
+        allowed_methods = {"programmatic", "exact_match", "evaluator"}
+    elif score_method_filter == "evaluator":
+        allowed_methods = {"evaluator"}
+    elif score_method_filter == "programmatic":
+        allowed_methods = {"programmatic"}
+    elif score_method_filter == "exact_match":
+        allowed_methods = {"exact_match"}
+    else:
+        allowed_methods = {"programmatic", "exact_match", "evaluator"}
+
+    # Without an evaluator adapter, skip evaluator method
+    if evaluator_adapter is None:
+        allowed_methods.discard("evaluator")
+
+    # Fetch results with optional model filter
+    model_filter = getattr(args, "model", None)
+    rows = store.query_results(model_id=model_filter)
+
+    # Filter by score method
+    rescoreable = [r for r in rows if r["score_method"] in allowed_methods]
+
+    # Filter null-only if requested
+    null_only = getattr(args, "null_only", False)
+    if null_only:
+        rescoreable = [r for r in rescoreable if r["score"] is None]
 
     print(f"APEX rescore — {dsn}")
     print(f"  Total results: {len(rows)}")
-    print(f"  Rescoreable (programmatic + exact_match): {len(rescoreable)}")
+    print(f"  Rescoreable: {len(rescoreable)}")
+    if model_filter:
+        print(f"  Model filter: {model_filter}")
+    print(f"  Methods: {', '.join(sorted(allowed_methods))}")
+    if null_only:
+        print(f"  NULL-only: yes")
+    if evaluator_adapter:
+        print(f"  Evaluator: {args.evaluator_backend}/{args.evaluator_model}")
     print()
 
     changed = 0
     total_delta = 0.0
+    counts_by_method: dict[str, int] = {}
 
     for row in rescoreable:
         probe = library.probes.get(row["probe_id"])
@@ -135,7 +176,7 @@ def cmd_rescore(args: argparse.Namespace) -> None:
         raw_response = row["raw_test_response"]
         old_score = row["score"]
 
-        new_score, _eval_model, justification = dispatcher.score(probe, query, raw_response)
+        new_score, eval_model_id, justification = dispatcher.score(probe, query, raw_response)
 
         if new_score is None:
             continue
@@ -144,16 +185,24 @@ def cmd_rescore(args: argparse.Namespace) -> None:
             delta = abs((new_score or 0.0) - (old_score or 0.0))
             total_delta += delta
             changed += 1
+            method = row["score_method"]
+            counts_by_method[method] = counts_by_method.get(method, 0) + 1
 
             if args.dry_run:
-                print(f"  {row['probe_id']} pos={row['target_position_percent']:.0f}% "
+                print(f"  [{method}] {row['probe_id']} pos={row['target_position_percent']:.0f}% "
                       f"ctx={row['context_length']}: {old_score} -> {new_score} ({justification})")
             else:
-                store.update_score(row["id"], new_score, justification)
+                store.update_score(
+                    row["id"], new_score, justification,
+                    evaluator_model_id=eval_model_id if row["score_method"] == "evaluator" else None,
+                )
 
     mean_delta = total_delta / changed if changed else 0.0
     action = "would change" if args.dry_run else "changed"
     print(f"\nRescored: {len(rescoreable)}, {action}: {changed}, mean delta: {mean_delta:.4f}")
+    if counts_by_method:
+        for method, count in sorted(counts_by_method.items()):
+            print(f"  {method}: {count}")
 
     store.close()
 
@@ -263,6 +312,16 @@ def main(argv: list[str] | None = None) -> None:
     p_rescore.add_argument("db", help="Path to results database or PostgreSQL DSN")
     p_rescore.add_argument("--data-dir", default="data", help="Path to data directory (default: data)")
     p_rescore.add_argument("--dry-run", action="store_true", help="Preview changes without writing")
+    p_rescore.add_argument("--evaluator-backend", help="Evaluator backend (e.g. llamacpp, openai)")
+    p_rescore.add_argument("--evaluator-model", help="Evaluator model name (e.g. Qwen_Qwen3-30B-A3B-Q4_K_M)")
+    p_rescore.add_argument("--evaluator-url", help="Evaluator base URL (e.g. http://node2:8080)")
+    p_rescore.add_argument("--model", help="Filter by model_id")
+    p_rescore.add_argument(
+        "--score-method", default="all",
+        choices=["all", "evaluator", "programmatic", "exact_match"],
+        help="Which score methods to rescore (default: all)",
+    )
+    p_rescore.add_argument("--null-only", action="store_true", help="Only rescore results where score IS NULL")
     p_rescore.set_defaults(func=cmd_rescore)
 
     # migrate

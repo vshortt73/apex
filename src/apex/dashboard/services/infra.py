@@ -190,7 +190,8 @@ def start_server(
             pid = proc.pid
             node_label = "node1"
         else:
-            # Launch on remote node via SSH
+            # Launch on remote node via SSH — bind to all interfaces
+            args.extend(["--host", "0.0.0.0"])
             ssh_target = remote_host or node
             remote_cmd = " ".join(args)
             ssh_cmd = [

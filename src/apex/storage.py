@@ -118,13 +118,30 @@ class ResultStore:
             cursor = self._conn.execute("SELECT COUNT(*) FROM probe_results")
         return cursor.fetchone()[0]
 
-    def update_score(self, row_id: int, score: float | None, justification: str | None) -> None:
-        """Update score and justification for a result by primary key."""
-        self._conn.execute(
-            f"UPDATE probe_results SET score = {self._ph},"
-            f" evaluator_justification = {self._ph} WHERE id = {self._ph}",
-            (score, justification, row_id),
-        )
+    def update_score(
+        self,
+        row_id: int,
+        score: float | None,
+        justification: str | None,
+        evaluator_model_id: str | None = None,
+    ) -> None:
+        """Update score and justification for a result by primary key.
+
+        When evaluator_model_id is provided, also update the evaluator_model_id column.
+        """
+        if evaluator_model_id is not None:
+            self._conn.execute(
+                f"UPDATE probe_results SET score = {self._ph},"
+                f" evaluator_justification = {self._ph},"
+                f" evaluator_model_id = {self._ph} WHERE id = {self._ph}",
+                (score, justification, evaluator_model_id, row_id),
+            )
+        else:
+            self._conn.execute(
+                f"UPDATE probe_results SET score = {self._ph},"
+                f" evaluator_justification = {self._ph} WHERE id = {self._ph}",
+                (score, justification, row_id),
+            )
         self._conn.commit()
 
     def close(self) -> None:

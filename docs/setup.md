@@ -258,6 +258,36 @@ python -m apex export results.db -o factual.json --dimension factual_recall
 python -m apex export results.db -o qwen.json --model qwen2.5-7b
 ```
 
+### Rescore existing results
+
+Re-run scoring on stored results without re-running inference. This is useful when:
+- Scoring logic has been updated (e.g., switching from 3-tier to continuous scoring)
+- Evaluator-scored probes failed during a run (e.g., evaluator server was unreachable, producing NULL scores)
+
+```bash
+# Rescore all programmatic + exact_match results
+python -m apex rescore results.db --data-dir data
+
+# Rescore only NULL evaluator results with an evaluator model
+python -m apex rescore postgresql://user@localhost:5432/apex \
+  --evaluator-backend llamacpp \
+  --evaluator-model Qwen_Qwen3-30B-A3B-Q4_K_M \
+  --evaluator-url http://node2:8080 \
+  --null-only
+
+# Preview changes without writing
+python -m apex rescore results.db --dry-run
+
+# Filter by model and/or score method
+python -m apex rescore results.db --model my-model --score-method evaluator --null-only
+```
+
+Without `--evaluator-backend` and `--evaluator-model`, only `programmatic` and `exact_match` results are rescored. Evaluator-method results require an evaluator adapter to be specified.
+
+When rescoring evaluator results, the `evaluator_model_id` column is also updated to reflect which model actually performed the scoring.
+
+The dashboard's Run Control tab also includes a "Rescore NULL Results" card that queries for NULL evaluator-scored results and launches a rescore subprocess with one click.
+
 ## Resume and Interruption
 
 APEX is designed for long overnight runs. If a run is interrupted (Ctrl+C, crash, power loss):
@@ -302,4 +332,4 @@ Each probe declares how its responses should be scored:
 | `evaluator` | Application probes (qualitative) + all salience probes | Sends response + rubric to evaluator model, parses JSON score. |
 | `semantic` | Available for future probes | Cosine similarity via sentence-transformers. |
 
-Evaluator-based scoring requires at least one model in `evaluator_models`. Without it, evaluator probes will record `score=null`.
+Evaluator-based scoring requires at least one model in `evaluator_models`. Without it, evaluator probes will record `score=null`. The dashboard's preflight check will warn when evaluator-method probes are selected but no evaluator model is configured. NULL scores can be filled in later using the `rescore` command.

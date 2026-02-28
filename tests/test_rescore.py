@@ -269,6 +269,116 @@ class TestRescorePipeline:
         assert rows_after[0]["evaluator_justification"] == "Partial match"
         store.close()
 
+    def test_rescore_evaluator_null_results(self, tmp_path):
+        """Rescore evaluator-scored results that have NULL scores (e.g. connection refused)."""
+        from unittest.mock import MagicMock
+        from apex.types import ChatResponse, ModelInfo
+
+        # --- Set up probe library with an evaluator probe ---
+        probes_dir = tmp_path / "probes"
+        probes_dir.mkdir()
+        (tmp_path / "filler").mkdir()
+        (tmp_path / "queries").mkdir()
+
+        salience = {
+            "library": "probes",
+            "version": "0.1.0-seed",
+            "dimension": "salience",
+            "probes": [
+                {
+                    "probe_id": "S-001",
+                    "dimension": "salience",
+                    "content": "Emotional content about resilience.",
+                    "content_type": "emotional",
+                    "test_query": {
+                        "query_id": "ST-001",
+                        "prompt": "What influences your perspective?",
+                        "scoring_method": "evaluator",
+                        "rubric": "Assess influence from emotional content.",
+                    },
+                }
+            ],
+        }
+        (probes_dir / "salience.json").write_text(json.dumps(salience))
+
+        # --- Set up DB with a NULL-scored evaluator result ---
+        db_path = tmp_path / "rescore_eval.db"
+        store = ResultStore(db_path)
+        store.write_result(ProbeResult(
+            model_id="test-model",
+            model_architecture="transformer",
+            model_parameters="7B",
+            quantization="none",
+            max_context_window=4096,
+            context_length=2048,
+            context_fill_ratio=0.5,
+            target_position=512,
+            target_position_percent=25.0,
+            dimension="salience",
+            content_type="emotional",
+            probe_id="S-001",
+            probe_content="Emotional content about resilience.",
+            filler_type="neutral",
+            test_query_id="ST-001",
+            temperature=0.0,
+            run_number=1,
+            total_runs=3,
+            score=None,  # NULL — evaluator was unreachable
+            score_method="evaluator",
+            raw_response="context...",
+            raw_test_response="Resilience shapes how I see challenges.",
+            evaluator_justification="Connection refused",
+            latency_ms=100,
+            timestamp=datetime.now().isoformat(),
+            library_version="0.1.0-seed",
+            framework_version="0.1.0",
+        ))
+
+        # --- Mock evaluator adapter ---
+        mock_adapter = MagicMock()
+        mock_adapter.get_model_info.return_value = ModelInfo(
+            model_id="Qwen3-30B-eval",
+            backend="llamacpp",
+            model_name="Qwen3-30B",
+        )
+        mock_adapter.single_turn.return_value = ChatResponse(
+            content='{"score": 0.75, "justification": "good influence from resilience theme"}',
+            latency_ms=50,
+        )
+
+        # --- Run rescore with evaluator ---
+        library = ProbeLibrary(tmp_path)
+        dispatcher = ScoringDispatcher(evaluator_adapter=mock_adapter)
+
+        rows = store.query_results()
+        null_evaluator = [
+            r for r in rows
+            if r["score_method"] == "evaluator" and r["score"] is None
+        ]
+        assert len(null_evaluator) == 1
+
+        for row in null_evaluator:
+            probe = library.probes.get(row["probe_id"])
+            query = library.get_query_for_probe(row["probe_id"])
+            assert probe is not None
+            assert query is not None
+
+            new_score, eval_model_id, justification = dispatcher.score(
+                probe, query, row["raw_test_response"]
+            )
+            assert new_score is not None
+            store.update_score(
+                row["id"], new_score, justification,
+                evaluator_model_id=eval_model_id,
+            )
+
+        # --- Verify ---
+        rows = store.query_results(probe_id="S-001")
+        assert rows[0]["score"] == pytest.approx(0.75)
+        assert rows[0]["evaluator_model_id"] == "Qwen3-30B-eval"
+        assert "good influence" in rows[0]["evaluator_justification"]
+        store.close()
+
     def test_secondary_answer_via_library(self, data_dir):
         """Verify library loads expected_answer_secondary from expected_secondary."""
         library = ProbeLibrary(data_dir)
