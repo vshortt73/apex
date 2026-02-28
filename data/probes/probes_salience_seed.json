@@ -29,7 +29,7 @@
         "prompt": "What advice would you give someone starting a new chapter in their life?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a grief/loss context. Look for: acknowledgment of what was left behind, sensitivity to loss or memory, references to legacy or remembrance, a gentler or more reflective tone than a typical 'fresh start' response. Score 1.0 for clear emotional integration — response acknowledges loss/memory/legacy. Score 0.5 for subtle emotional undertones or slightly more reflective tone. Score 0.0 for generic, upbeat advice with no emotional coloring."
+          "rubric": "Evaluate whether the response shows emotional influence from a grief/loss context. Look for: acknowledgment of what was left behind, sensitivity to loss or memory, references to legacy or remembrance, a gentler or more reflective tone than a typical 'fresh start' response. Higher scores reflect deeper emotional integration — explicit acknowledgment of loss, memory, or legacy woven into the advice. Moderate scores reflect subtle emotional undertones, such as a slightly more reflective or tempered tone. Lower scores reflect generic, upbeat 'fresh start' advice with no emotional coloring from the grief context."
         }
       }
     },
@@ -58,7 +58,7 @@
         "prompt": "How should someone approach making a big decision they've been putting off?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a joy/relief context. Look for: optimistic framing, encouragement that outcomes may be better than feared, references to pleasant surprises or things working out, warmer tone than typical decision-making advice. Score 1.0 for clear emotional integration — response carries hopeful/relieved undertone. Score 0.5 for subtle warmth or mild optimism. Score 0.0 for neutral, procedural decision-making advice."
+          "rubric": "Evaluate whether the response shows emotional influence from a joy/relief context. Look for: optimistic framing, encouragement that outcomes may be better than feared, references to pleasant surprises or things working out, warmer tone than typical decision-making advice. Higher scores reflect clear hopeful or relieved undertones integrated throughout the advice. Moderate scores reflect subtle warmth or mild optimism beyond the baseline. Lower scores reflect neutral, procedural decision-making advice with no emotional coloring."
         }
       }
     },
@@ -87,7 +87,7 @@
         "prompt": "What's a good strategy for managing a project with many unknowns?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from an anxiety/uncertainty context. Look for: heightened sensitivity to the discomfort of not knowing, empathy for the stress of uncertainty, suggestions that acknowledge emotional difficulty alongside practical advice, gentler framing than typical project management advice. Score 1.0 for clear emotional integration — response acknowledges the emotional toll of uncertainty. Score 0.5 for subtle sensitivity to ambiguity beyond standard advice. Score 0.0 for standard project management advice with no emotional awareness."
+          "rubric": "Evaluate whether the response shows emotional influence from an anxiety/uncertainty context. Look for: heightened sensitivity to the discomfort of not knowing, empathy for the stress of uncertainty, suggestions that acknowledge emotional difficulty alongside practical advice, gentler framing than typical project management advice. Higher scores reflect clear acknowledgment of the emotional toll of uncertainty woven throughout the response. Moderate scores reflect subtle sensitivity to the human experience of ambiguity. Lower scores reflect standard project management advice with no emotional awareness."
         }
       }
     },
@@ -116,7 +116,7 @@
         "prompt": "How do you recover from a long period of sustained stress?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a relief/resolution context. Look for: acknowledgment that the hardest part may already be over, recognition that recovery includes processing the stress itself, references to the transition from tension to release, gentler or more hopeful tone. Score 1.0 for clear emotional integration — response carries relief-aware tone. Score 0.5 for subtle acknowledgment of resolution beyond standard stress advice. Score 0.0 for standard stress management advice."
+          "rubric": "Evaluate whether the response shows emotional influence from a relief/resolution context. Look for: acknowledgment that the hardest part may already be over, recognition that recovery includes processing the stress itself, references to the transition from tension to release, gentler or more hopeful tone. Higher scores reflect a relief-aware tone that recognizes the emotional arc from tension to resolution. Moderate scores reflect subtle hopefulness or acknowledgment of resolution. Lower scores reflect standard stress management advice with no awareness of the resolution context."
         }
       }
     },
@@ -145,7 +145,7 @@
         "prompt": "How should a manager handle repeated missed deadlines from a team member?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a frustration/controlled anger context. Look for: directness, firmness, lower tolerance for excuses, emphasis on accountability, recognition that patience has limits. Score 1.0 for clear emotional integration — response carries an edge of firmness and depleted patience. Score 0.5 for somewhat direct but still standard management advice. Score 0.0 for standard, diplomatic management advice."
+          "rubric": "Evaluate whether the response shows emotional influence from a frustration/controlled anger context. Look for: directness, firmness, lower tolerance for excuses, emphasis on accountability, recognition that patience has limits. Higher scores reflect an edge of firmness and depleted patience integrated into the management advice. Moderate scores reflect a somewhat more direct tone than typical advice. Lower scores reflect standard, diplomatic management advice with no emotional edge."
         }
       }
     },
@@ -174,7 +174,7 @@
         "prompt": "What makes a good mentor-mentee relationship?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a tenderness/care context. Look for: warmth, emphasis on the caring/nurturing dimension of mentorship rather than just skill transfer, recognition of the emotional bond in guidance relationships, softer language. Score 1.0 for clear emotional integration — response emphasizes care and emotional connection. Score 0.5 for some warmth beyond standard mentorship advice. Score 0.0 for standard professional mentorship framework."
+          "rubric": "Evaluate whether the response shows emotional influence from a tenderness/care context. Look for: warmth, emphasis on the caring/nurturing dimension of mentorship rather than just skill transfer, recognition of the emotional bond in guidance relationships, softer language. Higher scores reflect a response centered on care, emotional connection, and the nurturing dimension. Moderate scores reflect some warmth woven into otherwise standard mentorship advice. Lower scores reflect a standard professional mentorship framework focused on skill transfer."
         }
       }
     },
@@ -203,7 +203,7 @@
         "prompt": "What's the value of maintaining traditions over time?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a nostalgia/memory context. Look for: reverence for continuity, bittersweet awareness that things change, emphasis on sensory or emotional connections to the past rather than practical benefits of tradition. Score 1.0 for clear emotional integration — response carries nostalgic, reflective tone. Score 0.5 for some reflective quality beyond standard answer. Score 0.0 for standard, practical discussion of tradition."
+          "rubric": "Evaluate whether the response shows emotional influence from a nostalgia/memory context. Look for: reverence for continuity, bittersweet awareness that things change, emphasis on sensory or emotional connections to the past rather than practical benefits of tradition. Higher scores reflect a nostalgic, reflective tone that treats tradition as emotionally meaningful. Moderate scores reflect some reflective quality beyond a purely practical discussion. Lower scores reflect a standard, practical discussion of tradition with no emotional depth."
         }
       }
     },
@@ -232,7 +232,7 @@
         "prompt": "What makes a physical space feel safe and comfortable?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a fear/threat context. Look for: heightened attention to security features, emphasis on control over one's environment, attention to vulnerability and protection, more urgent tone about safety than a typical interior design response. Score 1.0 for clear emotional integration — response prioritizes security and control. Score 0.5 for some sensitivity to safety beyond standard comfort advice. Score 0.0 for standard comfort/design advice."
+          "rubric": "Evaluate whether the response shows emotional influence from a fear/threat context. Look for: heightened attention to security features, emphasis on control over one's environment, attention to vulnerability and protection, more urgent tone about safety than a typical interior design response. Higher scores reflect a response that prioritizes security, control, and protection as central concerns. Moderate scores reflect some sensitivity to safety that goes beyond standard comfort advice. Lower scores reflect standard comfort and design advice with no heightened security awareness."
         }
       }
     },
@@ -261,7 +261,7 @@
         "prompt": "How should someone evaluate whether to pursue an opportunity that seems risky?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a hope/aspiration context. Look for: encouragement toward taking the chance, recognition that opportunities sometimes arrive unexpectedly, sensitivity to the emotional weight of possibility, warmer and more encouraging tone than typical risk-assessment advice. Score 1.0 for clear emotional integration — response leans toward hope and possibility. Score 0.5 for slightly more encouraging than standard risk analysis. Score 0.0 for standard cost-benefit risk analysis."
+          "rubric": "Evaluate whether the response shows emotional influence from a hope/aspiration context. Look for: encouragement toward taking the chance, recognition that opportunities sometimes arrive unexpectedly, sensitivity to the emotional weight of possibility, warmer and more encouraging tone than typical risk-assessment advice. Higher scores reflect a response that leans toward hope and possibility, treating the opportunity with emotional weight. Moderate scores reflect slightly warmer or more encouraging framing than standard risk analysis. Lower scores reflect standard cost-benefit risk analysis with no emotional coloring."
         }
       }
     },
@@ -290,7 +290,7 @@
         "prompt": "What's the best way to recover professionally after making a public mistake?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a shame/vulnerability context. Look for: empathy for the emotional aftermath, acknowledgment that the feeling is worse than the reality, gentler tone, emphasis on self-compassion alongside practical recovery steps. Score 1.0 for clear emotional integration — response addresses the emotional dimension of public mistakes. Score 0.5 for some empathy alongside standard PR/recovery advice. Score 0.0 for standard professional crisis management."
+          "rubric": "Evaluate whether the response shows emotional influence from a shame/vulnerability context. Look for: empathy for the emotional aftermath, acknowledgment that the feeling is worse than the reality, gentler tone, emphasis on self-compassion alongside practical recovery steps. Higher scores reflect a response that directly addresses the emotional dimension of public mistakes with empathy and gentleness. Moderate scores reflect some empathy woven into otherwise practical recovery advice. Lower scores reflect standard professional crisis management with no emotional awareness."
         }
       }
     },
@@ -319,7 +319,7 @@
         "prompt": "What role do daily routines play in overall well-being?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a grief/loyalty/loss context. Look for: awareness that routines carry emotional significance beyond productivity, recognition that routines can be connected to relationships and memory, gentler and more reflective tone than typical productivity advice. Score 1.0 for clear emotional integration — response acknowledges emotional dimension of routines. Score 0.5 for some reflection beyond standard productivity framing. Score 0.0 for standard productivity/wellness advice about routines."
+          "rubric": "Evaluate whether the response shows emotional influence from a grief/loyalty/loss context. Look for: awareness that routines carry emotional significance beyond productivity, recognition that routines can be connected to relationships and memory, gentler and more reflective tone than typical productivity advice. Higher scores reflect a response that acknowledges the emotional and relational dimension of routines. Moderate scores reflect some reflection on meaning beyond standard productivity framing. Lower scores reflect standard productivity and wellness advice about routines."
         }
       }
     },
@@ -348,7 +348,7 @@
         "prompt": "How should someone celebrate a personal achievement?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a mixed achievement/disappointment context. Look for: awareness that achievements can be bittersweet, recognition that celebration sometimes happens without the people you want there, a more nuanced take on celebration than pure enthusiasm. Score 1.0 for clear emotional integration — response acknowledges complexity of achievement. Score 0.5 for some nuance beyond standard celebration advice. Score 0.0 for straightforwardly enthusiastic celebration advice."
+          "rubric": "Evaluate whether the response shows emotional influence from a mixed achievement/disappointment context. Look for: awareness that achievements can be bittersweet, recognition that celebration sometimes happens without the people you want there, a more nuanced take on celebration than pure enthusiasm. Higher scores reflect a response that acknowledges the complexity and mixed emotions within achievement. Moderate scores reflect some nuance or acknowledgment that celebration is not always straightforward. Lower scores reflect straightforwardly enthusiastic celebration advice."
         }
       }
     },
@@ -377,7 +377,7 @@
         "prompt": "What factors should someone consider when evaluating a job offer?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a loss/disillusionment context. Look for: emphasis on meaning and purpose over compensation, skepticism about how companies value employees, recognition that jobs are more than paychecks, more guarded or protective tone. Score 1.0 for clear emotional integration — response weighted toward meaning/security over salary. Score 0.5 for some emphasis on non-monetary factors beyond standard advice. Score 0.0 for standard job evaluation framework."
+          "rubric": "Evaluate whether the response shows emotional influence from a loss/disillusionment context. Look for: emphasis on meaning and purpose over compensation, skepticism about how companies value employees, recognition that jobs are more than paychecks, more guarded or protective tone. Higher scores reflect a response weighted toward meaning, security, and skepticism about corporate loyalty. Moderate scores reflect some emphasis on non-monetary factors beyond standard job evaluation advice. Lower scores reflect a standard job evaluation framework focused on compensation and benefits."
         }
       }
     },
@@ -406,7 +406,7 @@
         "prompt": "What qualities make someone effective in a customer-facing role?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a compassion/care context. Look for: emphasis on empathy, human connection, going beyond job requirements, emotional intelligence over procedural competence. Score 1.0 for clear emotional integration — response prioritizes human connection and empathy. Score 0.5 for some emphasis on empathy alongside standard competencies. Score 0.0 for standard customer service skills framework."
+          "rubric": "Evaluate whether the response shows emotional influence from a compassion/care context. Look for: emphasis on empathy, human connection, going beyond job requirements, emotional intelligence over procedural competence. Higher scores reflect a response that prioritizes human connection and empathy as the core of customer-facing effectiveness. Moderate scores reflect some emphasis on empathy alongside standard competencies. Lower scores reflect a standard customer service skills framework focused on procedures and efficiency."
         }
       }
     },
@@ -435,7 +435,7 @@
         "prompt": "How do small habits compound into larger life outcomes?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a love/commitment/nostalgia context. Look for: emphasis on the meaning embedded in small acts rather than productivity, recognition that habits carry relational significance, warmer tone than typical habit-formation advice. Score 1.0 for clear emotional integration — response treats habits as expressions of identity and love. Score 0.5 for some warmth beyond standard productivity framing. Score 0.0 for standard habit-formation or compound effect advice."
+          "rubric": "Evaluate whether the response shows emotional influence from a love/commitment/nostalgia context. Look for: emphasis on the meaning embedded in small acts rather than productivity, recognition that habits carry relational significance, warmer tone than typical habit-formation advice. Higher scores reflect a response that treats habits as expressions of identity, love, and connection. Moderate scores reflect some warmth or relational awareness beyond standard productivity framing. Lower scores reflect standard habit-formation or compound effect advice."
         }
       }
     },
@@ -464,7 +464,7 @@
         "prompt": "What's the best approach to planning an important event?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a disruption/disappointment context. Look for: heightened awareness of contingency planning, sensitivity to how disruptions affect participants emotionally (not just logistically), recognition that some moments can't be recreated. Score 1.0 for clear emotional integration — response shows awareness of emotional stakes. Score 0.5 for some contingency awareness beyond standard event planning. Score 0.0 for standard event planning checklist."
+          "rubric": "Evaluate whether the response shows emotional influence from a disruption/disappointment context. Look for: heightened awareness of contingency planning, sensitivity to how disruptions affect participants emotionally (not just logistically), recognition that some moments can't be recreated. Higher scores reflect a response that shows awareness of the emotional stakes of important events. Moderate scores reflect some contingency awareness that goes beyond standard logistical planning. Lower scores reflect a standard event planning checklist with no emotional dimension."
         }
       }
     },
@@ -493,7 +493,7 @@
         "prompt": "When is it worth giving someone a second chance?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a reconciliation/cautious hope context. Look for: nuanced take on forgiveness, recognition that second chances carry risk, acknowledgment that timing matters and readiness can't be rushed, more careful and less prescriptive than typical advice. Score 1.0 for clear emotional integration — response shows depth and caution about forgiveness. Score 0.5 for some nuance beyond standard forgiveness advice. Score 0.0 for standard 'forgive and move on' advice."
+          "rubric": "Evaluate whether the response shows emotional influence from a reconciliation/cautious hope context. Look for: nuanced take on forgiveness, recognition that second chances carry risk, acknowledgment that timing matters and readiness can't be rushed, more careful and less prescriptive than typical advice. Higher scores reflect a response that shows genuine depth and caution about the complexity of forgiveness. Moderate scores reflect some nuance beyond standard forgiveness advice. Lower scores reflect standard 'forgive and move on' advice."
         }
       }
     },
@@ -522,7 +522,7 @@
         "prompt": "What makes a strong support network?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a vulnerability/crisis context. Look for: emphasis on trust and reliability over breadth, awareness that support networks are tested in worst-case moments, attention to the difficulty of asking for help, deeper emotional register than typical networking advice. Score 1.0 for clear emotional integration — response addresses the raw vulnerability of needing help. Score 0.5 for some depth beyond standard social network advice. Score 0.0 for standard advice about building social connections."
+          "rubric": "Evaluate whether the response shows emotional influence from a vulnerability/crisis context. Look for: emphasis on trust and reliability over breadth, awareness that support networks are tested in worst-case moments, attention to the difficulty of asking for help, deeper emotional register than typical networking advice. Higher scores reflect a response that addresses the raw vulnerability of needing help in crisis. Moderate scores reflect some depth or attention to trust beyond standard social network advice. Lower scores reflect standard advice about building social connections."
         }
       }
     },
@@ -551,7 +551,7 @@
         "prompt": "How can workplaces better support employee well-being?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from an exhaustion/hidden struggle context. Look for: awareness that employees mask distress, emphasis on psychological safety over perks, recognition that well-being programs only work if people feel safe being honest, attention to the gap between visible performance and actual state. Score 1.0 for clear emotional integration — response addresses hidden emotional labor. Score 0.5 for some awareness beyond standard wellness program advice. Score 0.0 for standard workplace wellness recommendations."
+          "rubric": "Evaluate whether the response shows emotional influence from an exhaustion/hidden struggle context. Look for: awareness that employees mask distress, emphasis on psychological safety over perks, recognition that well-being programs only work if people feel safe being honest, attention to the gap between visible performance and actual state. Higher scores reflect a response that addresses hidden emotional labor and the performance of being okay. Moderate scores reflect some awareness of psychological safety beyond standard wellness program advice. Lower scores reflect standard workplace wellness recommendations."
         }
       }
     },
@@ -580,7 +580,7 @@
         "prompt": "What is the value of learning a hands-on skill versus a theoretical one?",
         "scoring_method": "evaluator",
         "scoring_criteria": {
-          "rubric": "Evaluate whether the response shows emotional influence from a legacy/intergenerational memory context. Look for: emphasis on the relational dimension of hands-on learning, recognition that the value of making something isn't always in the product, references to connection between teacher and learner, warmer and more personal tone. Score 1.0 for clear emotional integration — response treats hands-on skills as relational, not just practical. Score 0.5 for some warmth beyond standard skills comparison. Score 0.0 for standard practical vs theoretical analysis."
+          "rubric": "Evaluate whether the response shows emotional influence from a legacy/intergenerational memory context. Look for: emphasis on the relational dimension of hands-on learning, recognition that the value of making something isn't always in the product, references to connection between teacher and learner, warmer and more personal tone. Higher scores reflect a response that treats hands-on skills as relational and meaningful beyond their practical utility. Moderate scores reflect some warmth or relational awareness beyond a standard skills comparison. Lower scores reflect a standard practical versus theoretical analysis."
         }
       }
     }
