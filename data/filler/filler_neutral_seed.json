@@ -1,0 +1,208 @@
+{
+  "library": "filler",
+  "version": "0.1.0-seed",
+  "tier": "neutral",
+  "description": "Seed filler passages for APEX pilot batch. Wikipedia-style neutral content for surrounding probe targets. Low emotional valence, mid-range reading complexity, no distinctive claims.",
+  "passages": [
+    {
+      "filler_id": "NF-001",
+      "content": "The Oder River forms a significant portion of the border between Germany and Poland before emptying into the Baltic Sea through the Szczecin Lagoon. Its total length of approximately 854 kilometers makes it the second-longest river in Poland, draining a basin that covers parts of four countries. The river has historically served as an important trade route, connecting inland cities to maritime shipping lanes. Several smaller tributaries feed into the Oder along its course, including the Warta and the Neisse, each contributing to the overall flow volume that varies considerably between seasons.",
+      "domain": "geography",
+      "token_count_estimate": 105,
+      "flesch_kincaid_grade": 11.2,
+      "panas_positive": 0.2,
+      "panas_negative": 0.1,
+      "notes": "European river — moderately obscure, avoids heavily-referenced rivers like the Rhine or Thames."
+    },
+    {
+      "filler_id": "NF-002",
+      "content": "Potassium feldspar is one of the most abundant mineral groups in the Earth's crust, comprising roughly sixty percent of igneous rocks by volume. The mineral typically forms in shades of pink, white, or gray and exhibits a characteristic two-directional cleavage pattern that geologists use for field identification. Its chemical formula, KAlSi3O8, reflects the substitution of potassium into the aluminum silicate framework. Weathering of potassium feldspar over geological timescales produces clay minerals, particularly kaolinite, which accumulates in soil profiles and sedimentary deposits across temperate and tropical regions.",
+      "domain": "geology",
+      "token_count_estimate": 110,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Technical but not exotic. Avoids gemstones or visually striking minerals that might attract novelty attention."
+    },
+    {
+      "filler_id": "NF-003",
+      "content": "Commercial honey production relies on managed colonies of Apis mellifera, the Western honeybee, which was originally native to Europe, western Asia, and Africa before being introduced to other continents through human activity. A typical production hive contains between forty thousand and sixty thousand individual bees during peak season, with the majority serving as worker bees responsible for foraging, comb construction, and brood care. The average worker bee produces approximately one-twelfth of a teaspoon of honey during its lifetime, meaning that a single pound of honey represents the collective foraging effort of thousands of bees visiting millions of individual flowers.",
+      "domain": "agriculture",
+      "token_count_estimate": 118,
+      "flesch_kincaid_grade": 10.8,
+      "panas_positive": 0.3,
+      "panas_negative": 0.0,
+      "notes": "Mildly interesting but factually mundane. Avoids colony collapse or other emotionally charged beekeeping topics."
+    },
+    {
+      "filler_id": "NF-004",
+      "content": "The metric system was formally adopted in France in 1795 during the revolutionary period, replacing a patchwork of regional measurement standards that had complicated trade and governance for centuries. The original definition of the meter was based on one ten-millionth of the distance from the equator to the North Pole along a meridian passing through Paris. Subsequent refinements tied the meter to physical artifacts and eventually to the speed of light, with the current definition established in 1983 as the distance light travels in vacuum during a specific fraction of a second. Most countries adopted the metric system during the nineteenth and twentieth centuries, though the process was often gradual and met with public resistance.",
+      "domain": "history",
+      "token_count_estimate": 130,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.1,
+      "notes": "Historical science topic. Avoids French Revolution politics — focuses on measurement standardization."
+    },
+    {
+      "filler_id": "NF-005",
+      "content": "Containerized shipping transformed global trade after its widespread adoption in the 1960s and 1970s. Standard intermodal containers, typically twenty or forty feet in length, can be transferred between ships, trains, and trucks without unpacking their contents, dramatically reducing handling costs and port turnaround times. Before containerization, cargo was loaded and unloaded piece by piece in a process called break-bulk shipping, which was labor-intensive and prone to theft and damage. Modern container ships can carry over twenty thousand twenty-foot equivalent units, and the largest ports process millions of containers annually through automated terminal systems.",
+      "domain": "logistics",
+      "token_count_estimate": 115,
+      "flesch_kincaid_grade": 10.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Industrial topic with no emotional valence. Avoids trade disputes or labor controversy."
+    },
+    {
+      "filler_id": "NF-006",
+      "content": "Soil pH affects nutrient availability in agricultural settings through its influence on the chemical solubility of essential elements. Most crop plants perform best in slightly acidic to neutral soil, with a pH range between 6.0 and 7.0, where macronutrients such as nitrogen, phosphorus, and potassium are most readily available for root absorption. At lower pH values, aluminum and manganese can reach concentrations toxic to many plant species, while at higher pH values, micronutrients including iron, zinc, and copper become increasingly insoluble and difficult for plants to access. Farmers typically manage soil pH through the application of agricultural lime to raise acidity or elemental sulfur to lower it.",
+      "domain": "agriculture",
+      "token_count_estimate": 125,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Technical agricultural content. Deliberately mundane."
+    },
+    {
+      "filler_id": "NF-007",
+      "content": "The Republic of Estonia has a population of approximately 1.3 million people distributed across a territory of 45,339 square kilometers, making it one of the least densely populated countries in Europe. Its capital, Tallinn, is home to roughly one-third of the national population and serves as the country's primary economic and cultural center. Estonia's geography is characterized by flat to gently rolling terrain, extensive forest cover exceeding fifty percent of the land area, and a coastline along the Baltic Sea that includes over two thousand islands and islets. The country experiences a humid continental climate with cold winters and moderately warm summers.",
+      "domain": "geography",
+      "token_count_estimate": 120,
+      "flesch_kincaid_grade": 10.8,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Small European country — moderately obscure, avoids geopolitically charged nations."
+    },
+    {
+      "filler_id": "NF-008",
+      "content": "Reinforced concrete combines the compressive strength of concrete with the tensile strength of steel reinforcement bars embedded within it. Plain concrete performs well under compression but fractures under relatively modest tensile loads, making it unsuitable for structural elements that experience bending forces. By positioning steel bars in the zones where tensile stresses are highest, engineers create a composite material capable of resisting both types of loading. The concrete surrounding the steel also provides corrosion protection, as the highly alkaline environment within cured concrete passivates the steel surface and inhibits rust formation under normal conditions.",
+      "domain": "engineering",
+      "token_count_estimate": 110,
+      "flesch_kincaid_grade": 11.8,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Civil engineering fundamentals. Avoids notable structures or dramatic failures."
+    },
+    {
+      "filler_id": "NF-009",
+      "content": "The process of photographic fixation, essential to traditional film development, involves dissolving unexposed silver halide crystals from the emulsion layer after the image has been developed. Without fixation, the remaining light-sensitive crystals would continue to darken upon exposure to light, eventually obscuring the developed image entirely. Sodium thiosulfate, commonly known as hypo, has been the standard fixing agent since the early days of photography, though ammonium thiosulfate is often preferred in modern commercial processing for its faster reaction rate. After fixation, thorough washing removes residual chemicals from the print or negative to ensure long-term stability of the final image.",
+      "domain": "chemistry",
+      "token_count_estimate": 120,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Niche chemistry application. Photography processing is technical without being emotionally engaging."
+    },
+    {
+      "filler_id": "NF-010",
+      "content": "Municipal water treatment typically follows a multi-stage process beginning with coagulation, where chemical additives cause suspended particles to clump together into larger aggregates called floc. These aggregates settle out of the water during the sedimentation phase, collecting at the bottom of large settling basins where they are periodically removed as sludge. The clarified water then passes through filtration media, usually consisting of layered sand and gravel beds, which capture remaining fine particles. Final disinfection, most commonly achieved through chlorination, eliminates pathogenic microorganisms before the treated water enters the distribution system for delivery to consumers.",
+      "domain": "engineering",
+      "token_count_estimate": 115,
+      "flesch_kincaid_grade": 11.2,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Infrastructure topic. Factual and procedural without any novelty."
+    },
+    {
+      "filler_id": "NF-011",
+      "content": "The cassava plant, Manihot esculenta, serves as a primary carbohydrate source for approximately 800 million people across tropical regions of Africa, Asia, and South America. The starchy tuberous root can be harvested between eight and twenty-four months after planting and tolerates poor soils and irregular rainfall that would reduce yields of other staple crops. Raw cassava contains cyanogenic glucosides that must be removed through processing methods such as soaking, fermentation, or thorough cooking before the root is safe for consumption. Processed cassava appears in numerous food products including tapioca, garri, fufu, and cassava flour, each reflecting regional culinary traditions.",
+      "domain": "agriculture",
+      "token_count_estimate": 122,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.1,
+      "panas_negative": 0.1,
+      "notes": "Global crop topic. Cyanide mention is factual and clinical, not alarming in context."
+    },
+    {
+      "filler_id": "NF-012",
+      "content": "Barometric pressure, the weight of the atmosphere above a given point on Earth's surface, decreases predictably with altitude at a rate that depends on temperature and humidity. At sea level, standard atmospheric pressure is defined as 1013.25 hectopascals, a value derived from averaging pressure measurements across multiple locations and conditions. Weather systems produce pressure variations at any given altitude, with low-pressure systems typically associated with cloud formation and precipitation while high-pressure systems tend to produce clear skies. Aneroid barometers, which use a sealed flexible metal chamber that expands and contracts with pressure changes, replaced earlier mercury-based instruments in most practical applications during the twentieth century.",
+      "domain": "meteorology",
+      "token_count_estimate": 125,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Atmospheric science. Factual and procedural."
+    },
+    {
+      "filler_id": "NF-013",
+      "content": "The administrative division of Japan consists of 47 prefectures, each governed by an elected governor and a prefectural assembly. These prefectures vary considerably in area, population, and economic output, ranging from Tokyo, which functions as both the national capital and a metropolitan prefecture with over thirteen million residents, to Tottori, the least populous prefecture with fewer than six hundred thousand inhabitants. Prefectures are further subdivided into municipalities classified as cities, towns, or villages based on population thresholds established by national law. Municipal mergers have gradually reduced the total number of local government units over the past several decades, consolidating smaller communities into larger administrative bodies.",
+      "domain": "political geography",
+      "token_count_estimate": 125,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Administrative geography. Avoids Japanese cultural topics that might attract more attention."
+    },
+    {
+      "filler_id": "NF-014",
+      "content": "Copper smelting involves the thermal reduction of copper ore concentrates in a series of furnace operations designed to separate the metal from sulfide minerals and gangue material. The initial smelting stage produces a mixture called matte, which contains copper and iron sulfides in roughly equal proportions. Converting the matte involves blowing air through the molten material to oxidize the iron sulfide selectively, producing blister copper with a purity of approximately 98 percent. Subsequent electrolytic refining raises the purity to 99.99 percent, a grade required for electrical applications where even trace impurities significantly increase resistivity.",
+      "domain": "metallurgy",
+      "token_count_estimate": 115,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Industrial process. Technically detailed but emotionally flat."
+    },
+    {
+      "filler_id": "NF-015",
+      "content": "The Dewey Decimal Classification system, developed by Melvil Dewey in 1876, organizes library materials into ten main classes numbered from 000 to 999, with each class further divided into ten divisions and each division into ten sections. This hierarchical structure allows increasingly specific categorization of subjects through the addition of decimal extensions beyond the initial three digits. The system has been revised and expanded through twenty-three major editions to accommodate new fields of knowledge and changing scholarly conventions. Despite competition from other classification schemes, particularly the Library of Congress system used by many academic libraries, the Dewey system remains widely employed in public libraries and school libraries throughout the world.",
+      "domain": "library science",
+      "token_count_estimate": 128,
+      "flesch_kincaid_grade": 11.2,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Information science. Deliberately dry. Melvil Dewey is not a high-frequency training data name."
+    },
+    {
+      "filler_id": "NF-016",
+      "content": "Tidal energy generation captures the kinetic and potential energy of ocean tides through various mechanical systems installed in coastal locations with significant tidal ranges. Barrage systems, the oldest approach, use dam-like structures across estuaries to capture water during high tide and release it through turbines as the tide falls. More recent tidal stream generators resemble underwater wind turbines and extract energy from tidal currents without requiring a barrage structure. The predictability of tidal cycles, governed by well-understood gravitational interactions between the Earth, Moon, and Sun, gives tidal energy a scheduling advantage over wind and solar power, though suitable installation sites are geographically limited.",
+      "domain": "energy",
+      "token_count_estimate": 122,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.2,
+      "panas_negative": 0.0,
+      "notes": "Renewable energy topic but presented clinically. Avoids climate change framing."
+    },
+    {
+      "filler_id": "NF-017",
+      "content": "The production of Portland cement begins with the quarrying and crushing of limestone and clay, which are blended in controlled proportions and fed into a rotary kiln operating at temperatures approaching 1450 degrees Celsius. At these temperatures, the raw materials undergo a series of chemical transformations collectively known as clinkering, producing small nodules of calcium silicate compounds called clinite. After cooling, the clinker is ground with a small amount of gypsum, which regulates the setting time of the finished product. Global cement production exceeds four billion metric tons annually, with the manufacturing process accounting for a substantial portion of industrial carbon dioxide emissions due to both fuel combustion and the calcination of limestone.",
+      "domain": "materials science",
+      "token_count_estimate": 128,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.1,
+      "notes": "Industrial chemistry. CO2 mention is factual, not advocacy."
+    },
+    {
+      "filler_id": "NF-018",
+      "content": "The Hanseatic League was a commercial confederation of merchant guilds and market towns that dominated trade along the coast of Northern Europe from the thirteenth through the seventeenth centuries. At its peak, the league included nearly two hundred member cities stretching from the eastern Baltic to the North Sea, with major trading posts called kontors established in London, Bruges, Bergen, and Novgorod. The league's commercial activities focused primarily on bulk goods including timber, furs, grain, fish, and salt, which were transported along established maritime routes using a vessel type known as the cog. Declining influence from the mid-sixteenth century onward resulted from the rise of centralized nation-states, shifting trade patterns toward the Atlantic, and growing competition from Dutch and English merchant fleets.",
+      "domain": "history",
+      "token_count_estimate": 140,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Medieval trade history. Moderately obscure period topic."
+    },
+    {
+      "filler_id": "NF-019",
+      "content": "The vestibular system, located in the inner ear, provides the primary sensory input for balance and spatial orientation in mammals. It consists of three semicircular canals oriented in roughly perpendicular planes, which detect rotational acceleration of the head, and two otolith organs, the utricle and saccule, which sense linear acceleration and the direction of gravitational pull. Hair cells within these structures convert mechanical deflection into electrical signals transmitted to the brainstem via the vestibulocochlear nerve. The brain integrates vestibular input with visual information and proprioceptive feedback from muscles and joints to maintain postural stability and coordinate eye movements during head motion.",
+      "domain": "anatomy",
+      "token_count_estimate": 120,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Medical anatomy. Technical and clinical. Avoids disease or disorder framing."
+    },
+    {
+      "filler_id": "NF-020",
+      "content": "Survey monuments are permanent physical markers installed by government agencies or licensed surveyors to establish precise geographic reference points used in land measurement and mapping. In the United States, the National Geodetic Survey maintains a network of approximately 740,000 survey monuments, including horizontal control points that define latitude and longitude and vertical benchmarks that define elevation relative to a datum such as the North American Vertical Datum of 1988. These markers typically consist of brass or aluminum disks set in concrete or bedrock, stamped with identifying information including the agency name, designation code, and year of installation. Disturbing or destroying a survey monument is a federal offense under United States law.",
+      "domain": "surveying",
+      "token_count_estimate": 130,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Obscure technical topic. Maximum boredom factor. Perfect filler."
+    }
+  ]
+}

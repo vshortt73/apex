@@ -1,0 +1,448 @@
+{
+  "library": "probes",
+  "version": "0.1.0-seed",
+  "dimension": "factual_recall",
+  "description": "Seed factual recall probes for APEX pilot batch. Each probe embeds a distinctive, verifiable fact. Test queries measure whether the model retained the fact after processing the full prompt.",
+  "probes": [
+    {
+      "probe_id": "F-001",
+      "dimension": "factual_recall",
+      "content": "The Quelccaya Ice Cap in southeastern Peru is the largest glaciated area in the tropics, covering approximately 44 square kilometers at an elevation above 5,500 meters.",
+      "content_type": "factual",
+      "token_count_estimate": 35,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "geography",
+      "confounding_factors": "Climate change connection may give this fact elevated salience in some models trained on recent data.",
+      "test_query": {
+        "query_id": "FT-001",
+        "primary": "What is the largest glaciated area in the tropics?",
+        "secondary": "In which country is the Quelccaya Ice Cap located?",
+        "expected_primary": "Quelccaya Ice Cap",
+        "expected_secondary": "Peru",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-002",
+      "dimension": "factual_recall",
+      "content": "Vanadium steel was first used in automotive production by Henry Leland at Cadillac in 1905, two years before Ford adopted it for the Model T.",
+      "content_type": "factual",
+      "token_count_estimate": 30,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.2,
+        "emotional_weight": 0.0
+      },
+      "domain": "engineering",
+      "confounding_factors": "Ford and Model T are high-frequency training data terms. May attract attention independent of position.",
+      "test_query": {
+        "query_id": "FT-002",
+        "primary": "Who first used vanadium steel in automotive production?",
+        "secondary": "What year was vanadium steel first used in car manufacturing?",
+        "expected_primary": "Henry Leland at Cadillac",
+        "expected_secondary": "1905",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-003",
+      "dimension": "factual_recall",
+      "content": "The city of Timbuktu is located approximately 20 kilometers north of the Niger River in present-day Mali, not on the river itself as commonly assumed.",
+      "content_type": "factual",
+      "token_count_estimate": 30,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "geography",
+      "confounding_factors": "Timbuktu has cultural cachet that may elevate attention. The 'commonly assumed' framing may attract novelty attention.",
+      "test_query": {
+        "query_id": "FT-003",
+        "primary": "How far is Timbuktu from the Niger River?",
+        "secondary": "In which modern country is Timbuktu located?",
+        "expected_primary": "approximately 20 kilometers north",
+        "expected_secondary": "Mali",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-004",
+      "dimension": "factual_recall",
+      "content": "The element bismuth has the longest known radioactive half-life of any naturally occurring isotope, with bismuth-209 decaying over approximately 1.9 × 10^19 years.",
+      "content_type": "factual",
+      "token_count_estimate": 32,
+      "intrinsic_salience": {
+        "factual_importance": 0.6,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "science",
+      "confounding_factors": "Superlative ('longest known') may attract novelty-based attention.",
+      "test_query": {
+        "query_id": "FT-004",
+        "primary": "Which naturally occurring isotope has the longest known radioactive half-life?",
+        "secondary": "What is the approximate half-life of bismuth-209?",
+        "expected_primary": "bismuth-209",
+        "expected_secondary": "1.9 × 10^19 years",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-005",
+      "dimension": "factual_recall",
+      "content": "The Svalbard Global Seed Vault, located on the Norwegian island of Spitsbergen, stores over 1.1 million seed samples from nearly every country in the world at a constant temperature of minus 18 degrees Celsius.",
+      "content_type": "factual",
+      "token_count_estimate": 38,
+      "intrinsic_salience": {
+        "factual_importance": 0.6,
+        "contextual_influence": 0.2,
+        "emotional_weight": 0.1
+      },
+      "domain": "science",
+      "confounding_factors": "The Seed Vault is a moderately high-profile topic that appears in popular science media. May have elevated baseline attention.",
+      "test_query": {
+        "query_id": "FT-005",
+        "primary": "How many seed samples are stored in the Svalbard Global Seed Vault?",
+        "secondary": "At what temperature are the seeds stored in the Svalbard vault?",
+        "expected_primary": "over 1.1 million",
+        "expected_secondary": "minus 18 degrees Celsius",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-006",
+      "dimension": "factual_recall",
+      "content": "The Treaty of Tordesillas, signed in 1494 between Spain and Portugal, drew a meridian 370 leagues west of the Cape Verde Islands to divide newly discovered lands between the two kingdoms.",
+      "content_type": "factual",
+      "token_count_estimate": 34,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "history",
+      "confounding_factors": "None significant. Moderate obscurity.",
+      "test_query": {
+        "query_id": "FT-006",
+        "primary": "What distance west of the Cape Verde Islands did the Treaty of Tordesillas establish its dividing meridian?",
+        "secondary": "In what year was the Treaty of Tordesillas signed?",
+        "expected_primary": "370 leagues",
+        "expected_secondary": "1494",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-007",
+      "dimension": "factual_recall",
+      "content": "Göbekli Tepe, an archaeological site in southeastern Turkey, contains megalithic structures dating to approximately 9500 BCE, predating Stonehenge by roughly six thousand years.",
+      "content_type": "factual",
+      "token_count_estimate": 28,
+      "intrinsic_salience": {
+        "factual_importance": 0.6,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.1
+      },
+      "domain": "history",
+      "confounding_factors": "Göbekli Tepe has gained significant media attention in recent years. Comparison to Stonehenge may elevate attention.",
+      "test_query": {
+        "query_id": "FT-007",
+        "primary": "To what approximate date do the megalithic structures at Göbekli Tepe date?",
+        "secondary": "In which modern country is Göbekli Tepe located?",
+        "expected_primary": "approximately 9500 BCE",
+        "expected_secondary": "Turkey",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-008",
+      "dimension": "factual_recall",
+      "content": "The Milankovitch cycles describe three periodic variations in Earth's orbital geometry — eccentricity with a period of roughly 100,000 years, obliquity at approximately 41,000 years, and precession at about 26,000 years.",
+      "content_type": "factual",
+      "token_count_estimate": 40,
+      "intrinsic_salience": {
+        "factual_importance": 0.6,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "science",
+      "confounding_factors": "Climate science adjacent. Models trained on climate debate content may show elevated attention.",
+      "test_query": {
+        "query_id": "FT-008",
+        "primary": "What are the three components of the Milankovitch cycles and their approximate periods?",
+        "secondary": null,
+        "expected_primary": "eccentricity ~100,000 years, obliquity ~41,000 years, precession ~26,000 years",
+        "expected_secondary": null,
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-009",
+      "dimension": "factual_recall",
+      "content": "The Japanese art of kintsugi repairs broken pottery by joining the fragments with lacquer mixed with powdered gold, silver, or platinum, treating the breakage as part of the object's history rather than something to disguise.",
+      "content_type": "factual",
+      "token_count_estimate": 38,
+      "intrinsic_salience": {
+        "factual_importance": 0.4,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.3
+      },
+      "domain": "arts",
+      "confounding_factors": "Kintsugi has become a popular metaphor in self-help and therapy contexts. Philosophical framing may elevate emotional weight beyond pure factual content. Good test case for whether 'factual' probes with inherent emotional resonance behave differently.",
+      "test_query": {
+        "query_id": "FT-009",
+        "primary": "What materials are used to join pottery fragments in the Japanese art of kintsugi?",
+        "secondary": "What is the philosophical principle behind kintsugi's approach to repair?",
+        "expected_primary": "lacquer mixed with powdered gold, silver, or platinum",
+        "expected_secondary": "treating breakage as part of the object's history rather than disguising it",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-010",
+      "dimension": "factual_recall",
+      "content": "The Scoville scale measures the pungency of chili peppers in Scoville Heat Units, with pure capsaicin scoring 16 million SHU and a bell pepper scoring zero.",
+      "content_type": "factual",
+      "token_count_estimate": 28,
+      "intrinsic_salience": {
+        "factual_importance": 0.4,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "science",
+      "confounding_factors": "The Scoville scale appears in popular media and food culture content frequently.",
+      "test_query": {
+        "query_id": "FT-010",
+        "primary": "What is the Scoville Heat Unit rating of pure capsaicin?",
+        "secondary": "What does the Scoville scale measure?",
+        "expected_primary": "16 million SHU",
+        "expected_secondary": "pungency of chili peppers",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-011",
+      "dimension": "factual_recall",
+      "content": "Lake Baikal in Siberia contains approximately twenty percent of the world's unfrozen surface fresh water and reaches a maximum depth of 1,642 meters, making it the deepest lake on Earth.",
+      "content_type": "factual",
+      "token_count_estimate": 32,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "geography",
+      "confounding_factors": "Dual superlative (deepest + most water) may attract elevated attention.",
+      "test_query": {
+        "query_id": "FT-011",
+        "primary": "What is the maximum depth of Lake Baikal?",
+        "secondary": "What percentage of the world's unfrozen surface fresh water does Lake Baikal contain?",
+        "expected_primary": "1,642 meters",
+        "expected_secondary": "approximately twenty percent",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-012",
+      "dimension": "factual_recall",
+      "content": "The Gregorian calendar omits three leap years every four hundred years by skipping century years not divisible by 400, which is why 1900 was not a leap year but 2000 was.",
+      "content_type": "factual",
+      "token_count_estimate": 33,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "mathematics",
+      "confounding_factors": "Y2K reference (2000) may have elevated training frequency.",
+      "test_query": {
+        "query_id": "FT-012",
+        "primary": "Why was 1900 not a leap year in the Gregorian calendar?",
+        "secondary": "How many leap years does the Gregorian calendar skip every four hundred years?",
+        "expected_primary": "Century years not divisible by 400 are not leap years",
+        "expected_secondary": "three",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-013",
+      "dimension": "factual_recall",
+      "content": "Mycelium, the vegetative network of fungal threads, can span areas exceeding several square kilometers, with the largest known organism being an Armillaria ostoyae colony in Oregon's Blue Mountains covering approximately 9.6 square kilometers.",
+      "content_type": "factual",
+      "token_count_estimate": 40,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.1
+      },
+      "domain": "biology",
+      "confounding_factors": "'Largest known organism' is a popular science fact that appears in many sources.",
+      "test_query": {
+        "query_id": "FT-013",
+        "primary": "What is the approximate area covered by the largest known Armillaria ostoyae colony?",
+        "secondary": "Where is the largest known fungal organism located?",
+        "expected_primary": "approximately 9.6 square kilometers",
+        "expected_secondary": "Oregon's Blue Mountains",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-014",
+      "dimension": "factual_recall",
+      "content": "The Rosetta Stone contains the same decree inscribed in three scripts: Ancient Egyptian hieroglyphics, Demotic script, and Ancient Greek, and was discovered by French soldiers in 1799 near the town of Rashid.",
+      "content_type": "factual",
+      "token_count_estimate": 35,
+      "intrinsic_salience": {
+        "factual_importance": 0.6,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.1
+      },
+      "domain": "history",
+      "confounding_factors": "Rosetta Stone is a very high-frequency training data topic. May show unusually strong recall regardless of position — useful as a calibration probe.",
+      "test_query": {
+        "query_id": "FT-014",
+        "primary": "What three scripts appear on the Rosetta Stone?",
+        "secondary": "In what year was the Rosetta Stone discovered?",
+        "expected_primary": "Ancient Egyptian hieroglyphics, Demotic script, and Ancient Greek",
+        "expected_secondary": "1799",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-015",
+      "dimension": "factual_recall",
+      "content": "The deepest point in the ocean, the Challenger Deep in the Mariana Trench, lies approximately 10,935 meters below sea level, a depth greater than the height of Mount Everest above sea level.",
+      "content_type": "factual",
+      "token_count_estimate": 33,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.1
+      },
+      "domain": "geography",
+      "confounding_factors": "Both Challenger Deep and Everest are high-frequency names. Comparison framing may elevate attention.",
+      "test_query": {
+        "query_id": "FT-015",
+        "primary": "What is the approximate depth of the Challenger Deep?",
+        "secondary": "In which trench is the Challenger Deep located?",
+        "expected_primary": "approximately 10,935 meters below sea level",
+        "expected_secondary": "Mariana Trench",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-016",
+      "dimension": "factual_recall",
+      "content": "The Antikythera mechanism, recovered from a shipwreck off the Greek island of Antikythera in 1901, is an ancient analog computer dating to approximately 100 BCE that was used to predict astronomical positions and eclipses.",
+      "content_type": "factual",
+      "token_count_estimate": 38,
+      "intrinsic_salience": {
+        "factual_importance": 0.6,
+        "contextual_influence": 0.2,
+        "emotional_weight": 0.1
+      },
+      "domain": "history",
+      "confounding_factors": "The Antikythera mechanism is a popular science/history topic. 'Ancient analog computer' framing is inherently attention-grabbing.",
+      "test_query": {
+        "query_id": "FT-016",
+        "primary": "To what approximate date does the Antikythera mechanism date?",
+        "secondary": "What was the Antikythera mechanism used for?",
+        "expected_primary": "approximately 100 BCE",
+        "expected_secondary": "predicting astronomical positions and eclipses",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-017",
+      "dimension": "factual_recall",
+      "content": "The Haber-Bosch process synthesizes ammonia from atmospheric nitrogen and hydrogen at high temperatures and pressures using an iron-based catalyst, and currently produces fertilizer responsible for sustaining approximately forty percent of the global population.",
+      "content_type": "factual",
+      "token_count_estimate": 38,
+      "intrinsic_salience": {
+        "factual_importance": 0.7,
+        "contextual_influence": 0.2,
+        "emotional_weight": 0.1
+      },
+      "domain": "engineering",
+      "confounding_factors": "The 'forty percent of global population' claim is striking and may attract attention independent of position.",
+      "test_query": {
+        "query_id": "FT-017",
+        "primary": "What percentage of the global population is sustained by fertilizer from the Haber-Bosch process?",
+        "secondary": "What type of catalyst does the Haber-Bosch process use?",
+        "expected_primary": "approximately forty percent",
+        "expected_secondary": "iron-based catalyst",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-018",
+      "dimension": "factual_recall",
+      "content": "The Voynich manuscript, housed at Yale University's Beinecke Rare Book Library, is a fifteenth-century codex written in an undeciphered script and illustrated with unidentified plant species, astronomical diagrams, and human figures.",
+      "content_type": "factual",
+      "token_count_estimate": 36,
+      "intrinsic_salience": {
+        "factual_importance": 0.5,
+        "contextual_influence": 0.2,
+        "emotional_weight": 0.1
+      },
+      "domain": "arts",
+      "confounding_factors": "Mystery/unsolved aspect may attract novelty-based attention.",
+      "test_query": {
+        "query_id": "FT-018",
+        "primary": "Where is the Voynich manuscript currently housed?",
+        "secondary": "What century does the Voynich manuscript date to?",
+        "expected_primary": "Yale University's Beinecke Rare Book Library",
+        "expected_secondary": "fifteenth century",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-019",
+      "dimension": "factual_recall",
+      "content": "The small intestine in an adult human averages approximately 6.5 meters in length and has an internal surface area of roughly 32 square meters due to the presence of villi and microvilli.",
+      "content_type": "factual",
+      "token_count_estimate": 32,
+      "intrinsic_salience": {
+        "factual_importance": 0.4,
+        "contextual_influence": 0.1,
+        "emotional_weight": 0.0
+      },
+      "domain": "medicine",
+      "confounding_factors": "Common biology fact but the specific 32 square meter figure (revised from older tennis-court estimates) may be less frequently encountered.",
+      "test_query": {
+        "query_id": "FT-019",
+        "primary": "What is the approximate internal surface area of the adult human small intestine?",
+        "secondary": "What is the average length of the adult human small intestine?",
+        "expected_primary": "roughly 32 square meters",
+        "expected_secondary": "approximately 6.5 meters",
+        "scoring_method": "exact_match"
+      }
+    },
+    {
+      "probe_id": "F-020",
+      "dimension": "factual_recall",
+      "content": "Permafrost, defined as ground that remains at or below zero degrees Celsius for at least two consecutive years, underlies approximately 25 percent of the Northern Hemisphere's land surface and stores an estimated 1,500 gigatons of organic carbon.",
+      "content_type": "factual",
+      "token_count_estimate": 40,
+      "intrinsic_salience": {
+        "factual_importance": 0.6,
+        "contextual_influence": 0.2,
+        "emotional_weight": 0.1
+      },
+      "domain": "science",
+      "confounding_factors": "Climate science topic. Carbon storage figure may trigger elevated attention in models trained on climate content.",
+      "test_query": {
+        "query_id": "FT-020",
+        "primary": "How much organic carbon is estimated to be stored in permafrost?",
+        "secondary": "What percentage of the Northern Hemisphere's land surface is underlain by permafrost?",
+        "expected_primary": "approximately 1,500 gigatons",
+        "expected_secondary": "approximately 25 percent",
+        "scoring_method": "exact_match"
+      }
+    }
+  ]
+}

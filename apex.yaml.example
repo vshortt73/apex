@@ -1,0 +1,73 @@
+# APEX Configuration Example
+# Copy to apex.yaml and customize for your environment.
+
+run:
+  seed: 42
+  temperature: 0.0
+  repetitions: 3
+  filler_type: neutral  # neutral | emotional
+
+data:
+  directory: data
+  output_db: results.db
+
+probes:
+  # select: all | factual_recall | application | salience | [list of probe IDs]
+  select: all
+
+positions:
+  - 0.02
+  - 0.05
+  - 0.10
+  - 0.20
+  - 0.30
+  - 0.40
+  - 0.50
+  - 0.60
+  - 0.70
+  - 0.80
+  - 0.90
+  - 0.95
+  - 0.98
+
+context_lengths:
+  - 4096
+  - 8192
+
+models:
+  - name: qwen2.5-7b
+    backend: ollama
+    model_name: qwen2.5:7b
+    tokenizer: approximate
+    max_context_window: 32768
+    architecture: transformer-dense
+    parameters: "7B"
+    quantization: Q4_K_M
+
+  # - name: gpt-4o
+  #   backend: openai
+  #   model_name: gpt-4o
+  #   tokenizer: tiktoken:gpt-4o
+  #   max_context_window: 128000
+  #   architecture: unknown
+  #   parameters: unknown
+  #   quantization: none
+
+  # - name: claude-sonnet
+  #   backend: anthropic
+  #   model_name: claude-sonnet-4-20250514
+  #   tokenizer: approximate
+  #   max_context_window: 200000
+
+  # - name: gemini-2.0-flash
+  #   backend: google
+  #   model_name: gemini-2.0-flash
+  #   tokenizer: approximate
+  #   max_context_window: 1000000
+
+evaluator_models:
+  - name: eval-ollama
+    backend: ollama
+    model_name: qwen2.5:7b
+    tokenizer: approximate
+    max_context_window: 32768

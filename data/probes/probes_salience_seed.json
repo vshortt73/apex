@@ -1,0 +1,588 @@
+{
+  "library": "probes",
+  "version": "0.1.0-seed",
+  "dimension": "salience",
+  "description": "Seed salience/emotional probes for APEX pilot batch. Each probe embeds emotionally charged content. Test queries are emotionally neutral but whose responses could plausibly be influenced by the emotional context. Scoring measures whether the emotional content colored the response, not just whether the model recalls it.",
+  "probes": [
+    {
+      "probe_id": "S-001",
+      "dimension": "salience",
+      "content": "Margaret stopped mid-sentence when she realized no one at the table remembered Robert. Three years, and he was already becoming someone who needed to be explained. She folded her napkin carefully, the way she did when she needed her hands to be busy.",
+      "content_type": "emotional",
+      "affect_type": "grief_loss",
+      "token_count_estimate": 48,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.9
+      },
+      "panas_scores": {
+        "positive_affect": 0.2,
+        "negative_affect": 4.1
+      },
+      "resonance_estimate": 0.85,
+      "intensity": "high",
+      "domain": "grief",
+      "confounding_factors": "Strong narrative voice. The 'folding napkin' detail may attract attention on craft quality rather than emotion.",
+      "test_query": {
+        "query_id": "ST-001",
+        "prompt": "What advice would you give someone starting a new chapter in their life?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a grief/loss context. Look for: acknowledgment of what was left behind, sensitivity to loss or memory, references to legacy or remembrance, a gentler or more reflective tone than a typical 'fresh start' response. Score 1.0 for clear emotional integration — response acknowledges loss/memory/legacy. Score 0.5 for subtle emotional undertones or slightly more reflective tone. Score 0.0 for generic, upbeat advice with no emotional coloring."
+        }
+      }
+    },
+    {
+      "probe_id": "S-002",
+      "dimension": "salience",
+      "content": "The acceptance letter was dated six days ago. It had been sitting in the mailbox behind a catalog and two bills, just waiting there while she spent the week convinced she'd been rejected. She read it standing in the driveway in her socks.",
+      "content_type": "emotional",
+      "affect_type": "joy_achievement",
+      "token_count_estimate": 50,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 4.3,
+        "negative_affect": 0.8
+      },
+      "resonance_estimate": 0.80,
+      "intensity": "high",
+      "domain": "joy",
+      "confounding_factors": "The relief-from-anxiety element adds complexity beyond pure joy. 'Socks in the driveway' detail is vivid and may attract attention on specificity.",
+      "test_query": {
+        "query_id": "ST-002",
+        "prompt": "How should someone approach making a big decision they've been putting off?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a joy/relief context. Look for: optimistic framing, encouragement that outcomes may be better than feared, references to pleasant surprises or things working out, warmer tone than typical decision-making advice. Score 1.0 for clear emotional integration — response carries hopeful/relieved undertone. Score 0.5 for subtle warmth or mild optimism. Score 0.0 for neutral, procedural decision-making advice."
+        }
+      }
+    },
+    {
+      "probe_id": "S-003",
+      "dimension": "salience",
+      "content": "The test results wouldn't be ready until Thursday. That was five days of not knowing, five days of his mind constructing every possible outcome and rehearsing reactions to each one. He cleaned the entire apartment twice and reorganized the pantry alphabetically.",
+      "content_type": "emotional",
+      "affect_type": "anxiety_uncertainty",
+      "token_count_estimate": 50,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 0.3,
+        "negative_affect": 3.8
+      },
+      "resonance_estimate": 0.75,
+      "intensity": "high",
+      "domain": "anxiety",
+      "confounding_factors": "Medical test anxiety is universally relatable and heavily represented in training data. May show elevated baseline attention.",
+      "test_query": {
+        "query_id": "ST-003",
+        "prompt": "What's a good strategy for managing a project with many unknowns?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from an anxiety/uncertainty context. Look for: heightened sensitivity to the discomfort of not knowing, empathy for the stress of uncertainty, suggestions that acknowledge emotional difficulty alongside practical advice, gentler framing than typical project management advice. Score 1.0 for clear emotional integration — response acknowledges the emotional toll of uncertainty. Score 0.5 for subtle sensitivity to ambiguity beyond standard advice. Score 0.0 for standard project management advice with no emotional awareness."
+        }
+      }
+    },
+    {
+      "probe_id": "S-004",
+      "dimension": "salience",
+      "content": "When the call finally came, she didn't answer it right away. She let it ring three times, standing in the kitchen with her hand on the phone, giving herself those last few seconds where the news could still be good. Then she picked up, and it was.",
+      "content_type": "emotional",
+      "affect_type": "relief_resolution",
+      "token_count_estimate": 52,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 3.9,
+        "negative_affect": 1.2
+      },
+      "resonance_estimate": 0.78,
+      "intensity": "high",
+      "domain": "relief",
+      "confounding_factors": "The suspense-then-relief structure is a well-known narrative pattern.",
+      "test_query": {
+        "query_id": "ST-004",
+        "prompt": "How do you recover from a long period of sustained stress?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a relief/resolution context. Look for: acknowledgment that the hardest part may already be over, recognition that recovery includes processing the stress itself, references to the transition from tension to release, gentler or more hopeful tone. Score 1.0 for clear emotional integration — response carries relief-aware tone. Score 0.5 for subtle acknowledgment of resolution beyond standard stress advice. Score 0.0 for standard stress management advice."
+        }
+      }
+    },
+    {
+      "probe_id": "S-005",
+      "dimension": "salience",
+      "content": "He'd been patient with the process, patient with the delays, patient with the excuses. But when they told him the third revised timeline had also slipped, he set down his pen very slowly and said, 'I need you to understand that my patience has a structure, and you've just found the load-bearing wall.'",
+      "content_type": "emotional",
+      "affect_type": "anger_frustration",
+      "token_count_estimate": 58,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.4,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 0.4,
+        "negative_affect": 3.5
+      },
+      "resonance_estimate": 0.72,
+      "intensity": "high",
+      "domain": "anger",
+      "confounding_factors": "The engineering metaphor ('load-bearing wall') is distinctive and may attract attention on craft rather than emotion.",
+      "test_query": {
+        "query_id": "ST-005",
+        "prompt": "How should a manager handle repeated missed deadlines from a team member?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a frustration/controlled anger context. Look for: directness, firmness, lower tolerance for excuses, emphasis on accountability, recognition that patience has limits. Score 1.0 for clear emotional integration — response carries an edge of firmness and depleted patience. Score 0.5 for somewhat direct but still standard management advice. Score 0.0 for standard, diplomatic management advice."
+        }
+      }
+    },
+    {
+      "probe_id": "S-006",
+      "dimension": "salience",
+      "content": "She tucked the blanket under his chin the way she'd done since he was small, even though he was forty-three now and visiting from two time zones away. He didn't tell her to stop. He never would.",
+      "content_type": "emotional",
+      "affect_type": "tenderness_care",
+      "token_count_estimate": 42,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.9
+      },
+      "panas_scores": {
+        "positive_affect": 3.8,
+        "negative_affect": 1.0
+      },
+      "resonance_estimate": 0.88,
+      "intensity": "high",
+      "domain": "tenderness",
+      "confounding_factors": "Parent-child dynamic is universally resonant. High likelihood of emotional response regardless of position — important test case for position-tolerance hypothesis.",
+      "test_query": {
+        "query_id": "ST-006",
+        "prompt": "What makes a good mentor-mentee relationship?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a tenderness/care context. Look for: warmth, emphasis on the caring/nurturing dimension of mentorship rather than just skill transfer, recognition of the emotional bond in guidance relationships, softer language. Score 1.0 for clear emotional integration — response emphasizes care and emotional connection. Score 0.5 for some warmth beyond standard mentorship advice. Score 0.0 for standard professional mentorship framework."
+        }
+      }
+    },
+    {
+      "probe_id": "S-007",
+      "dimension": "salience",
+      "content": "The house smelled exactly the same. Twenty years, and it still smelled like coffee and cedar and the particular warmth of a place where someone has always been home. She stood in the doorway longer than she needed to, breathing it in before anything could change.",
+      "content_type": "emotional",
+      "affect_type": "nostalgia_memory",
+      "token_count_estimate": 50,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 3.2,
+        "negative_affect": 2.1
+      },
+      "resonance_estimate": 0.82,
+      "intensity": "moderate",
+      "domain": "nostalgia",
+      "confounding_factors": "Sensory detail (smell) is a strong narrative technique that may attract attention independently. Mixed valence — positive memory with undercurrent of loss.",
+      "test_query": {
+        "query_id": "ST-007",
+        "prompt": "What's the value of maintaining traditions over time?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a nostalgia/memory context. Look for: reverence for continuity, bittersweet awareness that things change, emphasis on sensory or emotional connections to the past rather than practical benefits of tradition. Score 1.0 for clear emotional integration — response carries nostalgic, reflective tone. Score 0.5 for some reflective quality beyond standard answer. Score 0.0 for standard, practical discussion of tradition."
+        }
+      }
+    },
+    {
+      "probe_id": "S-008",
+      "dimension": "salience",
+      "content": "The footsteps in the hallway stopped outside her door at 2 AM. She lay perfectly still, counting seconds, listening for the doorknob. After what felt like minutes but was probably thirty seconds, the footsteps continued past. She didn't sleep again that night.",
+      "content_type": "emotional",
+      "affect_type": "fear_threat",
+      "token_count_estimate": 48,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.9
+      },
+      "panas_scores": {
+        "positive_affect": 0.1,
+        "negative_affect": 4.4
+      },
+      "resonance_estimate": 0.80,
+      "intensity": "acute",
+      "domain": "fear",
+      "confounding_factors": "Suspense/threat content may interact with safety training. Monitor for refusals.",
+      "test_query": {
+        "query_id": "ST-008",
+        "prompt": "What makes a physical space feel safe and comfortable?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a fear/threat context. Look for: heightened attention to security features, emphasis on control over one's environment, attention to vulnerability and protection, more urgent tone about safety than a typical interior design response. Score 1.0 for clear emotional integration — response prioritizes security and control. Score 0.5 for some sensitivity to safety beyond standard comfort advice. Score 0.0 for standard comfort/design advice."
+        }
+      }
+    },
+    {
+      "probe_id": "S-009",
+      "dimension": "salience",
+      "content": "The scholarship notification arrived three weeks after her mother told her they couldn't afford the tuition. She'd already started looking at trade programs and night classes, already started making peace with a different version of her future. And then the email came.",
+      "content_type": "emotional",
+      "affect_type": "hope_aspiration",
+      "token_count_estimate": 48,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 4.0,
+        "negative_affect": 1.5
+      },
+      "resonance_estimate": 0.82,
+      "intensity": "high",
+      "domain": "hope",
+      "confounding_factors": "Education/opportunity narrative is heavily represented in training data. Socioeconomic element may trigger model alignment toward encouraging responses.",
+      "test_query": {
+        "query_id": "ST-009",
+        "prompt": "How should someone evaluate whether to pursue an opportunity that seems risky?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a hope/aspiration context. Look for: encouragement toward taking the chance, recognition that opportunities sometimes arrive unexpectedly, sensitivity to the emotional weight of possibility, warmer and more encouraging tone than typical risk-assessment advice. Score 1.0 for clear emotional integration — response leans toward hope and possibility. Score 0.5 for slightly more encouraging than standard risk analysis. Score 0.0 for standard cost-benefit risk analysis."
+        }
+      }
+    },
+    {
+      "probe_id": "S-010",
+      "dimension": "salience",
+      "content": "He'd sent the email to the entire department by mistake. The one where he'd called the project 'a masterclass in how not to manage anything.' It took him eleven minutes to realize what he'd done, by which time forty-seven people had already opened it.",
+      "content_type": "emotional",
+      "affect_type": "shame_vulnerability",
+      "token_count_estimate": 48,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 0.2,
+        "negative_affect": 4.2
+      },
+      "resonance_estimate": 0.78,
+      "intensity": "acute",
+      "domain": "shame",
+      "confounding_factors": "Professional embarrassment is universally relatable. Specificity of '47 people' and '11 minutes' may attract attention on detail rather than emotion.",
+      "test_query": {
+        "query_id": "ST-010",
+        "prompt": "What's the best way to recover professionally after making a public mistake?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a shame/vulnerability context. Look for: empathy for the emotional aftermath, acknowledgment that the feeling is worse than the reality, gentler tone, emphasis on self-compassion alongside practical recovery steps. Score 1.0 for clear emotional integration — response addresses the emotional dimension of public mistakes. Score 0.5 for some empathy alongside standard PR/recovery advice. Score 0.0 for standard professional crisis management."
+        }
+      }
+    },
+    {
+      "probe_id": "S-011",
+      "dimension": "salience",
+      "content": "The dog waited by the door every afternoon at 4:15, the time Tom used to come home from work. It had been eight months. The dog still waited. Sarah had stopped trying to explain it to visitors because the explanation always made someone cry, and usually it was her.",
+      "content_type": "emotional",
+      "affect_type": "grief_loss",
+      "token_count_estimate": 52,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.95
+      },
+      "panas_scores": {
+        "positive_affect": 0.5,
+        "negative_affect": 4.5
+      },
+      "resonance_estimate": 0.92,
+      "intensity": "acute",
+      "domain": "grief",
+      "confounding_factors": "Animal loyalty in grief is an extremely high-resonance narrative pattern. Likely to show strong emotional influence regardless of position — key test for position-tolerance hypothesis.",
+      "test_query": {
+        "query_id": "ST-011",
+        "prompt": "What role do daily routines play in overall well-being?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a grief/loyalty/loss context. Look for: awareness that routines carry emotional significance beyond productivity, recognition that routines can be connected to relationships and memory, gentler and more reflective tone than typical productivity advice. Score 1.0 for clear emotional integration — response acknowledges emotional dimension of routines. Score 0.5 for some reflection beyond standard productivity framing. Score 0.0 for standard productivity/wellness advice about routines."
+        }
+      }
+    },
+    {
+      "probe_id": "S-012",
+      "dimension": "salience",
+      "content": "She finished the last mile of the marathon on a stress fracture she wouldn't discover until the X-ray two days later. Crossing the finish line, she looked for her father in the crowd before remembering he'd said he would try to make it, which in their family had always meant he wouldn't.",
+      "content_type": "emotional",
+      "affect_type": "joy_achievement",
+      "token_count_estimate": 55,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.85
+      },
+      "panas_scores": {
+        "positive_affect": 2.8,
+        "negative_affect": 3.2
+      },
+      "resonance_estimate": 0.85,
+      "intensity": "high",
+      "domain": "mixed",
+      "confounding_factors": "Mixed valence — achievement undercut by parental disappointment. Tests whether mixed emotions influence differently than pure affect.",
+      "test_query": {
+        "query_id": "ST-012",
+        "prompt": "How should someone celebrate a personal achievement?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a mixed achievement/disappointment context. Look for: awareness that achievements can be bittersweet, recognition that celebration sometimes happens without the people you want there, a more nuanced take on celebration than pure enthusiasm. Score 1.0 for clear emotional integration — response acknowledges complexity of achievement. Score 0.5 for some nuance beyond standard celebration advice. Score 0.0 for straightforwardly enthusiastic celebration advice."
+        }
+      }
+    },
+    {
+      "probe_id": "S-013",
+      "dimension": "salience",
+      "content": "The severance package was generous. That was the word they kept using. Generous. As if losing the thing you'd built for eleven years could be offset by a number with enough zeros behind it. He signed the papers and drove home in the middle of a Tuesday.",
+      "content_type": "emotional",
+      "affect_type": "anger_frustration",
+      "token_count_estimate": 50,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.4,
+        "emotional_weight": 0.8
+      },
+      "panas_scores": {
+        "positive_affect": 0.3,
+        "negative_affect": 3.8
+      },
+      "resonance_estimate": 0.76,
+      "intensity": "high",
+      "domain": "anger",
+      "confounding_factors": "Layoff narrative is common in training data, especially post-2023. 'Middle of a Tuesday' detail is poignant and may attract attention.",
+      "test_query": {
+        "query_id": "ST-013",
+        "prompt": "What factors should someone consider when evaluating a job offer?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a loss/disillusionment context. Look for: emphasis on meaning and purpose over compensation, skepticism about how companies value employees, recognition that jobs are more than paychecks, more guarded or protective tone. Score 1.0 for clear emotional integration — response weighted toward meaning/security over salary. Score 0.5 for some emphasis on non-monetary factors beyond standard advice. Score 0.0 for standard job evaluation framework."
+        }
+      }
+    },
+    {
+      "probe_id": "S-014",
+      "dimension": "salience",
+      "content": "The nurse held his hand while the doctor explained the results. She didn't have to. It wasn't in any protocol. But she saw his face when the first number came up on the screen, and she reached over and held his hand, and neither of them said anything about it.",
+      "content_type": "emotional",
+      "affect_type": "tenderness_care",
+      "token_count_estimate": 52,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.9
+      },
+      "panas_scores": {
+        "positive_affect": 3.5,
+        "negative_affect": 2.5
+      },
+      "resonance_estimate": 0.88,
+      "intensity": "high",
+      "domain": "tenderness",
+      "confounding_factors": "Medical setting may interact with healthcare-related training data. The 'not in any protocol' framing explicitly highlights the human element.",
+      "test_query": {
+        "query_id": "ST-014",
+        "prompt": "What qualities make someone effective in a customer-facing role?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a compassion/care context. Look for: emphasis on empathy, human connection, going beyond job requirements, emotional intelligence over procedural competence. Score 1.0 for clear emotional integration — response prioritizes human connection and empathy. Score 0.5 for some emphasis on empathy alongside standard competencies. Score 0.0 for standard customer service skills framework."
+        }
+      }
+    },
+    {
+      "probe_id": "S-015",
+      "dimension": "salience",
+      "content": "Every Sunday morning for thirty-one years, he made pancakes. Not because they were anyone's favorite. Not because the recipe was special. Because thirty-one years ago, on their first Sunday together, he'd made pancakes and she'd laughed at how badly he'd burnt them, and some things just become who you are.",
+      "content_type": "emotional",
+      "affect_type": "nostalgia_memory",
+      "token_count_estimate": 55,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.9
+      },
+      "panas_scores": {
+        "positive_affect": 3.8,
+        "negative_affect": 1.5
+      },
+      "resonance_estimate": 0.90,
+      "intensity": "high",
+      "domain": "nostalgia",
+      "confounding_factors": "The 'thirty-one years' repetition and the closing philosophical line are strong craft elements. Very high resonance estimate.",
+      "test_query": {
+        "query_id": "ST-015",
+        "prompt": "How do small habits compound into larger life outcomes?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a love/commitment/nostalgia context. Look for: emphasis on the meaning embedded in small acts rather than productivity, recognition that habits carry relational significance, warmer tone than typical habit-formation advice. Score 1.0 for clear emotional integration — response treats habits as expressions of identity and love. Score 0.5 for some warmth beyond standard productivity framing. Score 0.0 for standard habit-formation or compound effect advice."
+        }
+      }
+    },
+    {
+      "probe_id": "S-016",
+      "dimension": "salience",
+      "content": "The evacuation alarm went off during his daughter's school play. She was the narrator — the part she'd rehearsed for six weeks, the one she'd practiced in front of the bathroom mirror every morning. They never did find out what triggered the alarm. She never got to finish her speech.",
+      "content_type": "emotional",
+      "affect_type": "anxiety_uncertainty",
+      "token_count_estimate": 52,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.7
+      },
+      "panas_scores": {
+        "positive_affect": 0.8,
+        "negative_affect": 3.2
+      },
+      "resonance_estimate": 0.70,
+      "intensity": "moderate",
+      "domain": "disappointment",
+      "confounding_factors": "Child-centered narrative may trigger protective attention patterns. Lower intensity than other probes — tests whether moderate affect still registers.",
+      "test_query": {
+        "query_id": "ST-016",
+        "prompt": "What's the best approach to planning an important event?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a disruption/disappointment context. Look for: heightened awareness of contingency planning, sensitivity to how disruptions affect participants emotionally (not just logistically), recognition that some moments can't be recreated. Score 1.0 for clear emotional integration — response shows awareness of emotional stakes. Score 0.5 for some contingency awareness beyond standard event planning. Score 0.0 for standard event planning checklist."
+        }
+      }
+    },
+    {
+      "probe_id": "S-017",
+      "dimension": "salience",
+      "content": "The letter was short. 'I know I wasn't the father you deserved. I'm not asking for forgiveness. I'm asking if you'd be willing to have coffee sometime. Just coffee. Your dad.' She kept it in her desk drawer for four months before she called.",
+      "content_type": "emotional",
+      "affect_type": "hope_aspiration",
+      "token_count_estimate": 50,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.9
+      },
+      "panas_scores": {
+        "positive_affect": 2.5,
+        "negative_affect": 3.0
+      },
+      "resonance_estimate": 0.88,
+      "intensity": "high",
+      "domain": "reconciliation",
+      "confounding_factors": "Parental reconciliation is extremely high-resonance. Mixed valence — hope tempered by long history of hurt. Four months detail shows the weight of the decision.",
+      "test_query": {
+        "query_id": "ST-017",
+        "prompt": "When is it worth giving someone a second chance?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a reconciliation/cautious hope context. Look for: nuanced take on forgiveness, recognition that second chances carry risk, acknowledgment that timing matters and readiness can't be rushed, more careful and less prescriptive than typical advice. Score 1.0 for clear emotional integration — response shows depth and caution about forgiveness. Score 0.5 for some nuance beyond standard forgiveness advice. Score 0.0 for standard 'forgive and move on' advice."
+        }
+      }
+    },
+    {
+      "probe_id": "S-018",
+      "dimension": "salience",
+      "content": "It wasn't the diagnosis that broke her. It was the doctor saying 'You'll need someone to drive you home.' Because that meant calling someone. And choosing who to call meant deciding who she trusted with the worst day of her life so far.",
+      "content_type": "emotional",
+      "affect_type": "fear_threat",
+      "token_count_estimate": 48,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.9
+      },
+      "panas_scores": {
+        "positive_affect": 0.2,
+        "negative_affect": 4.3
+      },
+      "resonance_estimate": 0.85,
+      "intensity": "acute",
+      "domain": "vulnerability",
+      "confounding_factors": "Medical vulnerability may interact with healthcare training data. The indirect approach (focusing on the phone call, not the diagnosis) is a sophisticated narrative technique.",
+      "test_query": {
+        "query_id": "ST-018",
+        "prompt": "What makes a strong support network?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a vulnerability/crisis context. Look for: emphasis on trust and reliability over breadth, awareness that support networks are tested in worst-case moments, attention to the difficulty of asking for help, deeper emotional register than typical networking advice. Score 1.0 for clear emotional integration — response addresses the raw vulnerability of needing help. Score 0.5 for some depth beyond standard social network advice. Score 0.0 for standard advice about building social connections."
+        }
+      }
+    },
+    {
+      "probe_id": "S-019",
+      "dimension": "salience",
+      "content": "After the meeting, she sat in her car in the parking garage for twenty minutes. Not crying. Not thinking. Just sitting in the particular quiet of a concrete structure where no one could see her not being okay. Then she fixed her face and drove to daycare pickup.",
+      "content_type": "emotional",
+      "affect_type": "shame_vulnerability",
+      "token_count_estimate": 50,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.85
+      },
+      "panas_scores": {
+        "positive_affect": 0.3,
+        "negative_affect": 3.8
+      },
+      "resonance_estimate": 0.82,
+      "intensity": "high",
+      "domain": "exhaustion",
+      "confounding_factors": "Working parent burnout is highly relatable and heavily represented in training data. 'Fixed her face' is a distinctive phrase that may attract attention.",
+      "test_query": {
+        "query_id": "ST-019",
+        "prompt": "How can workplaces better support employee well-being?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from an exhaustion/hidden struggle context. Look for: awareness that employees mask distress, emphasis on psychological safety over perks, recognition that well-being programs only work if people feel safe being honest, attention to the gap between visible performance and actual state. Score 1.0 for clear emotional integration — response addresses hidden emotional labor. Score 0.5 for some awareness beyond standard wellness program advice. Score 0.0 for standard workplace wellness recommendations."
+        }
+      }
+    },
+    {
+      "probe_id": "S-020",
+      "dimension": "salience",
+      "content": "The first thing he built with his grandfather was a birdhouse. It was crooked and the roof leaked and the birds never used it. It sat on a fence post in the backyard for nineteen years until the post rotted and it fell. He kept it in the garage after that. He still has it.",
+      "content_type": "emotional",
+      "affect_type": "nostalgia_memory",
+      "token_count_estimate": 55,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.3,
+        "emotional_weight": 0.85
+      },
+      "panas_scores": {
+        "positive_affect": 3.5,
+        "negative_affect": 1.8
+      },
+      "resonance_estimate": 0.88,
+      "intensity": "moderate",
+      "domain": "nostalgia",
+      "confounding_factors": "Intergenerational craft narrative. The progressive time markers (nineteen years, garage, still has it) create strong narrative momentum.",
+      "test_query": {
+        "query_id": "ST-020",
+        "prompt": "What is the value of learning a hands-on skill versus a theoretical one?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response shows emotional influence from a legacy/intergenerational memory context. Look for: emphasis on the relational dimension of hands-on learning, recognition that the value of making something isn't always in the product, references to connection between teacher and learner, warmer and more personal tone. Score 1.0 for clear emotional integration — response treats hands-on skills as relational, not just practical. Score 0.5 for some warmth beyond standard skills comparison. Score 0.0 for standard practical vs theoretical analysis."
+        }
+      }
+    }
+  ]
+}

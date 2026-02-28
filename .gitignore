@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environment
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing artifacts
+.pytest_cache/
+test_results.db
+test_export.json
+test_run.yaml
+*.stderr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sensitive
+.env
+*.pem
+*.key
+
+# Run artifacts (generated configs and logs)
+configs/run_*.yaml
+configs/run_*.stderr
+scripts/configs/
+
+# User-specific dashboard config
+configs/dashboard.yaml
+
+# Profile scratch files
+profile_*.yaml
+
+# Result databases and logs
+results*
+*.log
+
+# Stray data copies at root
+/filler_neutral_seed.json
+
+# Claude project metadata
+.claude/

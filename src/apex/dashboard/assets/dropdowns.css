@@ -1,0 +1,71 @@
+/* Fix Dash 4 dropdown text color for dark theme */
+
+/* The main dropdown container */
+.dash-dropdown {
+    color: #e0e0e0;
+}
+
+/* Selected value text in the closed dropdown */
+.dash-dropdown-value {
+    color: #e0e0e0 !important;
+}
+
+.dash-dropdown-value-item {
+    color: #e0e0e0 !important;
+}
+
+/* Placeholder text */
+.dash-dropdown-placeholder {
+    color: #a0a0b8 !important;
+}
+
+/* Search input text */
+.dash-dropdown-search {
+    color: #e0e0e0 !important;
+}
+
+/* The trigger area (closed dropdown) */
+.dash-dropdown-trigger {
+    background-color: #1e1e36 !important;
+    border-color: #3a3a5c !important;
+    border-radius: 4px;
+}
+
+/* Trigger icon (chevron) */
+.dash-dropdown-trigger-icon {
+    color: #a0a0b8 !important;
+}
+
+/* Dropdown content (open menu) */
+.dash-dropdown-content {
+    background-color: #252540 !important;
+    border-color: #3a3a5c !important;
+}
+
+/* Search container in open dropdown */
+.dash-dropdown-search-container {
+    background-color: #1e1e36 !important;
+    border-color: #3a3a5c !important;
+}
+
+/* Individual options in the dropdown menu */
+.dash-dropdown-option {
+    color: #e0e0e0 !important;
+    background-color: #252540 !important;
+}
+
+.dash-dropdown-option:hover,
+.dash-dropdown-option[aria-selected="true"] {
+    background-color: #3a3a5c !important;
+}
+
+/* Clear button */
+.dash-dropdown-clear {
+    color: #a0a0b8 !important;
+}
+
+/* Multi-value count badge */
+.dash-dropdown-value-count {
+    color: #e0e0e0 !important;
+    background-color: #3a3a5c !important;
+}

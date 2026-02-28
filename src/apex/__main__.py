@@ -1,0 +1,6 @@
+"""Entry point for `python -m apex`."""
+
+from apex.cli import main
+
+if __name__ == "__main__":
+    main()

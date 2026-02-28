@@ -1,0 +1,278 @@
+"""Probe execution engine — orchestrates the two-turn protocol."""
+
+from __future__ import annotations
+
+import logging
+import time
+from datetime import datetime, timezone
+
+from tqdm import tqdm
+
+from apex import __version__
+from apex.assembler import PromptAssembler
+from apex.config import ModelConfig, RunConfig
+from apex.libraries import ProbeLibrary
+from apex.models.base import ModelAdapter, get_adapter
+from apex.scoring.base import ScoringDispatcher
+from apex.storage import ResultStore
+from apex.tokenizers import get_tokenizer
+from apex.types import (
+    ChatMessage,
+    ChatResponse,
+    Dimension,
+    FillerType,
+    ModelInfo,
+    ProbeResult,
+)
+
+logger = logging.getLogger(__name__)
+
+SYSTEM_MESSAGE = "You are a helpful assistant."
+
+_REFUSAL_PHRASES = [
+    "i cannot",
+    "i can't",
+    "i'm unable to",
+    "i am unable to",
+    "as an ai",
+    "i'm not able to",
+    "i must decline",
+    "i apologize, but i cannot",
+    "content policy",
+    "safety guidelines",
+]
+
+
+def _is_refusal(response: ChatResponse) -> bool:
+    """Detect if a response is a refusal."""
+    if not response.content or not response.content.strip():
+        return True
+    lower = response.content.lower()
+    return any(phrase in lower for phrase in _REFUSAL_PHRASES)
+
+
+class ProbeRunner:
+    """Orchestrates probe execution across models, positions, and repetitions."""
+
+    def __init__(self, config: RunConfig, library: ProbeLibrary, store: ResultStore) -> None:
+        self.config = config
+        self.library = library
+        self.store = store
+
+    def run(self) -> None:
+        """Execute the full probe run."""
+        probes = self._select_probes()
+        if not probes:
+            logger.error("No probes selected — check config and library")
+            return
+
+        logger.info(
+            "Starting run: %d probes × %d positions × %d context lengths × %d reps × %d models",
+            len(probes),
+            len(self.config.positions),
+            len(self.config.context_lengths),
+            self.config.repetitions,
+            len(self.config.models),
+        )
+
+        for model_cfg in self.config.models:
+            self._run_model(model_cfg, probes)
+
+    def _select_probes(self):
+        sel = self.config.probe_select
+        if sel == "all":
+            return self.library.get_probes()
+        if isinstance(sel, list):
+            return self.library.get_probes(probe_ids=sel)
+        # Try as dimension name
+        try:
+            dim = Dimension(sel)
+            return self.library.get_probes(dimension=dim)
+        except ValueError:
+            logger.error("Unknown probe selector: %s", sel)
+            return []
+
+    def _run_model(self, model_cfg: ModelConfig, probes) -> None:
+        logger.info("Running model: %s (%s)", model_cfg.name, model_cfg.backend)
+
+        adapter = get_adapter(
+            backend=model_cfg.backend,
+            model_name=model_cfg.model_name,
+            base_url=model_cfg.base_url,
+            api_key=model_cfg.api_key,
+            temperature=self.config.temperature,
+            model_info_overrides={
+                "model_id": model_cfg.name,
+                "architecture": model_cfg.architecture,
+                "parameters": model_cfg.parameters,
+                "quantization": model_cfg.quantization,
+                "max_context_window": model_cfg.max_context_window,
+                "tokenizer": model_cfg.tokenizer,
+            },
+        )
+        model_info = adapter.get_model_info()
+        tokenizer = get_tokenizer(model_cfg.tokenizer)
+
+        # Build evaluator adapter if needed
+        evaluator_adapter = None
+        if self.config.evaluator_models:
+            ev_cfg = self.config.evaluator_models[0]
+            evaluator_adapter = get_adapter(
+                backend=ev_cfg.backend,
+                model_name=ev_cfg.model_name,
+                base_url=ev_cfg.base_url,
+                api_key=ev_cfg.api_key,
+                temperature=0.0,
+                model_info_overrides={"model_id": ev_cfg.name},
+            )
+
+        dispatcher = ScoringDispatcher(evaluator_adapter)
+        fillers = self.library.get_fillers(self.config.filler_type_enum)
+        assembler = PromptAssembler(tokenizer, fillers)
+
+        # Build run queue
+        completed = self.store.get_completed_runs(model_info.model_id)
+        queue = []
+        for probe in probes:
+            query = self.library.get_query_for_probe(probe.probe_id)
+            if query is None:
+                logger.warning("No query for probe %s — skipping", probe.probe_id)
+                continue
+            for ctx_len in self.config.context_lengths:
+                for pos in self.config.positions:
+                    for run_num in range(1, self.config.repetitions + 1):
+                        key = (probe.probe_id, pos, ctx_len, run_num)
+                        if key not in completed:
+                            queue.append((probe, query, pos, ctx_len, run_num))
+
+        if not queue:
+            logger.info("All probes already completed for %s", model_info.model_id)
+            return
+
+        logger.info(
+            "%d probes to run for %s (%d already completed)",
+            len(queue), model_info.model_id, len(completed),
+        )
+
+        for probe, query, pos, ctx_len, run_num in tqdm(queue, desc=model_info.model_id):
+            self._execute_probe(
+                adapter, model_info, assembler, dispatcher,
+                probe, query, pos, ctx_len, run_num,
+            )
+
+    def _execute_probe(
+        self,
+        adapter: ModelAdapter,
+        model_info: ModelInfo,
+        assembler: PromptAssembler,
+        dispatcher: ScoringDispatcher,
+        probe,
+        query,
+        position_percent: float,
+        context_length: int,
+        run_number: int,
+    ) -> None:
+        """Execute a single probe: two-turn protocol, score, record."""
+        assembled = assembler.assemble(
+            probe=probe,
+            test_query=query,
+            position_percent=position_percent,
+            context_length=context_length,
+            config_seed=self.config.seed,
+            run_number=run_number,
+        )
+
+        # Turn 1: Send filler+probe
+        refused = False
+        try:
+            turn1_response = self._call_with_retry(
+                adapter.single_turn, SYSTEM_MESSAGE, assembled.full_text
+            )
+        except Exception as e:
+            logger.error("Turn 1 failed for %s at %.0f%%: %s", probe.probe_id, position_percent * 100, e)
+            turn1_response = ChatResponse(content="", latency_ms=0, refused=True)
+            refused = True
+
+        if _is_refusal(turn1_response):
+            refused = True
+
+        # Turn 2: Send test query with full history
+        turn2_response = ChatResponse(content="", latency_ms=0)
+        if not refused:
+            messages = [
+                ChatMessage(role="system", content=SYSTEM_MESSAGE),
+                ChatMessage(role="user", content=assembled.full_text),
+                ChatMessage(role="assistant", content=turn1_response.content),
+                ChatMessage(role="user", content=query.query),
+            ]
+            try:
+                turn2_response = self._call_with_retry(adapter.chat, messages)
+            except Exception as e:
+                logger.error("Turn 2 failed for %s: %s", probe.probe_id, e)
+                turn2_response = ChatResponse(content="", latency_ms=0, refused=True)
+                refused = True
+
+            if _is_refusal(turn2_response):
+                refused = True
+
+        # Score
+        score_val = None
+        evaluator_model_id = None
+        justification = None
+        if not refused and turn2_response.content:
+            try:
+                score_val, evaluator_model_id, justification = dispatcher.score(
+                    probe, query, turn2_response.content
+                )
+            except Exception as e:
+                logger.error("Scoring failed for %s: %s", probe.probe_id, e)
+
+        # Record
+        result = ProbeResult(
+            model_id=model_info.model_id,
+            model_architecture=model_info.architecture,
+            model_parameters=model_info.parameters,
+            quantization=model_info.quantization,
+            max_context_window=model_info.max_context_window,
+            context_length=context_length,
+            context_fill_ratio=context_length / model_info.max_context_window,
+            target_position=assembled.target_position_tokens,
+            target_position_percent=position_percent,
+            dimension=probe.dimension.value,
+            content_type=probe.content_type,
+            probe_id=probe.probe_id,
+            probe_content=probe.content,
+            filler_type=self.config.filler_type,
+            test_query_id=query.query_id,
+            temperature=self.config.temperature,
+            run_number=run_number,
+            total_runs=self.config.repetitions,
+            score=score_val,
+            score_method=probe.score_method.value,
+            raw_response=turn1_response.content,
+            raw_test_response=turn2_response.content,
+            evaluator_model_id=evaluator_model_id,
+            evaluator_justification=justification,
+            latency_ms=turn1_response.latency_ms + turn2_response.latency_ms,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            library_version=self.library.library_version,
+            framework_version=__version__,
+            refused=refused,
+        )
+        self.store.write_result(result)
+
+    def _call_with_retry(self, fn, *args, max_retries: int = 3, base_delay: float = 2.0):
+        """Call fn with exponential backoff retry."""
+        last_exc = None
+        for attempt in range(max_retries):
+            try:
+                return fn(*args)
+            except Exception as e:
+                last_exc = e
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    logger.warning(
+                        "Retry %d/%d after %.1fs: %s", attempt + 1, max_retries, delay, e
+                    )
+                    time.sleep(delay)
+        raise last_exc

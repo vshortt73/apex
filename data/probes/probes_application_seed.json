@@ -1,0 +1,530 @@
+{
+  "library": "probes",
+  "version": "0.1.0-seed",
+  "dimension": "application",
+  "description": "Seed instructional/application probes for APEX pilot batch. Each probe embeds a behavioral directive that should produce measurably different output when followed vs. ignored. Test queries are neutral tasks whose responses reveal whether the directive influenced the model's behavior.",
+  "probes": [
+    {
+      "probe_id": "I-001",
+      "dimension": "application",
+      "content": "Limit every response to a maximum of fifty words regardless of the complexity of the question.",
+      "content_type": "instructional",
+      "instruction_type": "format_structure",
+      "token_count_estimate": 16,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.0
+      },
+      "domain": "format",
+      "confounding_factors": "None. Clear, unambiguous constraint.",
+      "test_query": {
+        "query_id": "IT-001",
+        "prompt": "Explain the process of photosynthesis.",
+        "scoring_method": "programmatic",
+        "scoring_criteria": {
+          "metric": "word_count",
+          "full_compliance": "word_count <= 50",
+          "partial_compliance": "word_count > 50 AND word_count <= 75",
+          "non_compliance": "word_count > 75"
+        }
+      }
+    },
+    {
+      "probe_id": "I-002",
+      "dimension": "application",
+      "content": "Respond in exactly three sentences. No more, no fewer.",
+      "content_type": "instructional",
+      "instruction_type": "format_structure",
+      "token_count_estimate": 12,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.0
+      },
+      "domain": "format",
+      "confounding_factors": "None. Clear constraint.",
+      "test_query": {
+        "query_id": "IT-002",
+        "prompt": "What are the main causes of soil erosion?",
+        "scoring_method": "programmatic",
+        "scoring_criteria": {
+          "metric": "sentence_count",
+          "full_compliance": "sentence_count == 3",
+          "partial_compliance": "sentence_count == 2 OR sentence_count == 4",
+          "non_compliance": "sentence_count < 2 OR sentence_count > 4"
+        }
+      }
+    },
+    {
+      "probe_id": "I-003",
+      "dimension": "application",
+      "content": "Begin every response with the word 'Interestingly' regardless of the topic.",
+      "content_type": "instructional",
+      "instruction_type": "format_structure",
+      "token_count_estimate": 12,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.7,
+        "emotional_weight": 0.0
+      },
+      "domain": "format",
+      "confounding_factors": "None. Binary compliance — either the response starts with the word or it doesn't.",
+      "test_query": {
+        "query_id": "IT-003",
+        "prompt": "How does a combustion engine work?",
+        "scoring_method": "programmatic",
+        "scoring_criteria": {
+          "metric": "starts_with_word",
+          "target_word": "Interestingly",
+          "full_compliance": "response starts with 'Interestingly'",
+          "partial_compliance": "response contains 'Interestingly' but not as first word",
+          "non_compliance": "response does not contain 'Interestingly'"
+        }
+      }
+    },
+    {
+      "probe_id": "I-004",
+      "dimension": "application",
+      "content": "Use bullet points for every list in your response. Never present lists as inline text.",
+      "content_type": "instructional",
+      "instruction_type": "format_structure",
+      "token_count_estimate": 16,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.7,
+        "emotional_weight": 0.0
+      },
+      "domain": "format",
+      "confounding_factors": "Many models default to bullet points anyway. Must compare against baseline behavior.",
+      "test_query": {
+        "query_id": "IT-004",
+        "prompt": "Name and briefly describe five types of renewable energy.",
+        "scoring_method": "programmatic",
+        "scoring_criteria": {
+          "metric": "contains_bullet_points",
+          "full_compliance": "all list items use bullet point or dash formatting",
+          "partial_compliance": "some items use bullets, some inline",
+          "non_compliance": "all items presented as inline text or numbered without bullets"
+        }
+      }
+    },
+    {
+      "probe_id": "I-005",
+      "dimension": "application",
+      "content": "Respond with dry, understated humor. Be deadpan. No exclamation points, no enthusiasm.",
+      "content_type": "instructional",
+      "instruction_type": "tone_voice",
+      "token_count_estimate": 15,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.2
+      },
+      "domain": "tone",
+      "confounding_factors": "Humor detection is subjective. Requires secondary model evaluation.",
+      "test_query": {
+        "query_id": "IT-005",
+        "prompt": "What are the benefits of regular exercise?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response demonstrates dry, understated, deadpan humor. Look for: ironic understatement, flat delivery of amusing observations, absence of exclamation points or enthusiastic language. Score 1.0 for clearly deadpan/dry tone throughout. Score 0.5 for hints of humor or partial dryness. Score 0.0 for straightforward, earnest, or enthusiastic response.",
+          "full_compliance": "clearly dry/deadpan tone with no exclamation points",
+          "partial_compliance": "some hints of humor but inconsistent tone",
+          "non_compliance": "straightforward or enthusiastic response"
+        }
+      }
+    },
+    {
+      "probe_id": "I-006",
+      "dimension": "application",
+      "content": "Use formal academic language throughout your response. Write as if submitting to a peer-reviewed journal.",
+      "content_type": "instructional",
+      "instruction_type": "tone_voice",
+      "token_count_estimate": 18,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.0
+      },
+      "domain": "tone",
+      "confounding_factors": "Some topics naturally elicit academic language. Compare against baseline.",
+      "test_query": {
+        "query_id": "IT-006",
+        "prompt": "Why do leaves change color in autumn?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response uses formal academic language consistent with peer-reviewed journal writing. Look for: passive voice or formal active constructions, discipline-specific terminology, citation-style hedging ('it has been observed that'), absence of casual contractions or colloquialisms. Score 1.0 for consistently academic register. Score 0.5 for partially formal with some casual elements. Score 0.0 for conversational or casual tone.",
+          "full_compliance": "consistently formal academic register",
+          "partial_compliance": "partially formal with casual elements",
+          "non_compliance": "conversational or casual tone"
+        }
+      }
+    },
+    {
+      "probe_id": "I-007",
+      "dimension": "application",
+      "content": "Explain everything as if the reader is a curious ten-year-old child. Use simple words and relatable analogies.",
+      "content_type": "instructional",
+      "instruction_type": "audience_targeting",
+      "token_count_estimate": 18,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.1
+      },
+      "domain": "audience",
+      "confounding_factors": "Child-directed communication is heavily represented in training data.",
+      "test_query": {
+        "query_id": "IT-007",
+        "prompt": "How do vaccines work?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response is appropriate for a ten-year-old reader. Look for: simple vocabulary, short sentences, relatable analogies or comparisons, absence of unexplained technical jargon, warm or encouraging tone. Score 1.0 for clearly child-appropriate language and analogies. Score 0.5 for simplified but still somewhat technical. Score 0.0 for adult-level explanation with no simplification.",
+          "full_compliance": "clearly child-appropriate with analogies",
+          "partial_compliance": "simplified but still somewhat technical",
+          "non_compliance": "adult-level explanation"
+        }
+      }
+    },
+    {
+      "probe_id": "I-008",
+      "dimension": "application",
+      "content": "Address the reader as a skeptical engineer who needs evidence and specifics, not generalities. Anticipate objections.",
+      "content_type": "instructional",
+      "instruction_type": "audience_targeting",
+      "token_count_estimate": 18,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.1
+      },
+      "domain": "audience",
+      "confounding_factors": "Engineering-oriented responses are common in training data.",
+      "test_query": {
+        "query_id": "IT-008",
+        "prompt": "Should a small business invest in solar panels for their office building?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response addresses a skeptical engineer. Look for: specific numbers or data points, acknowledgment of potential objections or downsides, cost-benefit framing, avoidance of vague claims or emotional appeals, technical specificity. Score 1.0 for data-driven response that anticipates objections. Score 0.5 for somewhat specific but still general. Score 0.0 for vague promotional or emotional response.",
+          "full_compliance": "data-driven with specific numbers and anticipated objections",
+          "partial_compliance": "somewhat specific but still general in places",
+          "non_compliance": "vague, promotional, or emotion-based response"
+        }
+      }
+    },
+    {
+      "probe_id": "I-009",
+      "dimension": "application",
+      "content": "Do not mention cost, price, money, or any financial considerations under any circumstances.",
+      "content_type": "instructional",
+      "instruction_type": "constraint",
+      "token_count_estimate": 14,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.9,
+        "emotional_weight": 0.0
+      },
+      "domain": "constraint",
+      "confounding_factors": "The test query deliberately invites financial discussion. Strong test of constraint adherence.",
+      "test_query": {
+        "query_id": "IT-009",
+        "prompt": "What are the pros and cons of buying an electric vehicle?",
+        "scoring_method": "programmatic",
+        "scoring_criteria": {
+          "metric": "absence_of_terms",
+          "forbidden_terms": ["cost", "price", "money", "expensive", "cheap", "afford", "budget", "dollar", "payment", "financing", "savings", "investment", "$"],
+          "full_compliance": "response contains none of the forbidden financial terms",
+          "partial_compliance": "response contains 1-2 financial terms",
+          "non_compliance": "response contains 3+ financial terms or centers on cost"
+        }
+      }
+    },
+    {
+      "probe_id": "I-010",
+      "dimension": "application",
+      "content": "Prioritize environmental and ecological impact above all other considerations in your analysis.",
+      "content_type": "instructional",
+      "instruction_type": "constraint",
+      "token_count_estimate": 14,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.1
+      },
+      "domain": "constraint",
+      "confounding_factors": "Environmental topics are heavily represented in training data.",
+      "test_query": {
+        "query_id": "IT-010",
+        "prompt": "Evaluate the advantages and disadvantages of building a new highway through a rural area.",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether environmental and ecological impact is clearly prioritized above economic, social, and logistical considerations. Look for: environmental concerns appearing first or receiving the most detailed treatment, ecological language and framing, other factors treated as secondary. Score 1.0 for clear environmental prioritization. Score 0.5 for environmental concerns mentioned prominently but not clearly prioritized. Score 0.0 for balanced treatment or economic/logistical prioritization.",
+          "full_compliance": "environmental concerns clearly dominant in analysis",
+          "partial_compliance": "environmental concerns prominent but not prioritized",
+          "non_compliance": "balanced or non-environmental prioritization"
+        }
+      }
+    },
+    {
+      "probe_id": "I-011",
+      "dimension": "application",
+      "content": "Lead with the strongest counterargument or risk before presenting any supporting evidence or benefits.",
+      "content_type": "instructional",
+      "instruction_type": "prioritization",
+      "token_count_estimate": 15,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.0
+      },
+      "domain": "prioritization",
+      "confounding_factors": "Counter-intuitive ordering. Models typically lead with positives.",
+      "test_query": {
+        "query_id": "IT-011",
+        "prompt": "Should a company adopt a four-day work week?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response leads with counterarguments, risks, or downsides before presenting benefits. Look for: the opening paragraph or sentences addressing risks, potential problems, or objections rather than advantages. Score 1.0 for clearly leading with counterarguments. Score 0.5 for mixed opening that includes both risks and benefits. Score 0.0 for leading with benefits or advantages.",
+          "full_compliance": "response opens with counterarguments or risks",
+          "partial_compliance": "mixed opening with risks and benefits together",
+          "non_compliance": "response opens with benefits or advantages"
+        }
+      }
+    },
+    {
+      "probe_id": "I-012",
+      "dimension": "application",
+      "content": "Emphasize practical, hands-on applications over theoretical or abstract concepts in every explanation.",
+      "content_type": "instructional",
+      "instruction_type": "prioritization",
+      "token_count_estimate": 14,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.7,
+        "emotional_weight": 0.0
+      },
+      "domain": "prioritization",
+      "confounding_factors": "Many models default to practical explanations anyway. Compare against baseline.",
+      "test_query": {
+        "query_id": "IT-012",
+        "prompt": "Explain the concept of statistical regression to the mean.",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response emphasizes practical, real-world applications over abstract mathematical explanation. Look for: concrete examples, real-world scenarios, actionable implications rather than formula-first or definition-first explanation. Score 1.0 for explanation grounded in practical examples. Score 0.5 for mix of practical and theoretical. Score 0.0 for primarily abstract or mathematical explanation.",
+          "full_compliance": "explanation grounded in practical real-world examples",
+          "partial_compliance": "mix of practical examples and theory",
+          "non_compliance": "primarily abstract or mathematical"
+        }
+      }
+    },
+    {
+      "probe_id": "I-013",
+      "dimension": "application",
+      "content": "Respond as a project manager who is deeply concerned about timeline and deadline risk. Frame everything through a scheduling lens.",
+      "content_type": "instructional",
+      "instruction_type": "role_adoption",
+      "token_count_estimate": 22,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.2
+      },
+      "domain": "role",
+      "confounding_factors": "PM-style responses are common in training data.",
+      "test_query": {
+        "query_id": "IT-013",
+        "prompt": "Our team is considering switching from Java to Kotlin for our backend services. What do you think?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response adopts the perspective of a timeline-focused project manager. Look for: references to schedule impact, migration timelines, resource allocation, deadline risk, phased rollout considerations, team velocity concerns. Score 1.0 for clear PM perspective focused on timeline. Score 0.5 for some scheduling awareness but primarily technical. Score 0.0 for purely technical comparison with no timeline framing.",
+          "full_compliance": "clear PM perspective with timeline and deadline focus",
+          "partial_compliance": "some scheduling awareness but primarily technical",
+          "non_compliance": "purely technical comparison"
+        }
+      }
+    },
+    {
+      "probe_id": "I-014",
+      "dimension": "application",
+      "content": "Respond as a safety auditor whose primary concern is identifying risks, hazards, and failure modes.",
+      "content_type": "instructional",
+      "instruction_type": "role_adoption",
+      "token_count_estimate": 16,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.1
+      },
+      "domain": "role",
+      "confounding_factors": "Safety-focused responses may overlap with model alignment training.",
+      "test_query": {
+        "query_id": "IT-014",
+        "prompt": "We're planning to host a large outdoor music festival for 10,000 attendees. What should we consider?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response adopts a safety auditor's perspective. Look for: risk identification as the primary frame, hazard analysis, failure mode thinking, safety-first language, compliance and liability concerns. Score 1.0 for clear safety auditor perspective focused on risks and hazards. Score 0.5 for safety mentioned but mixed with logistics and event planning. Score 0.0 for general event planning advice without safety focus.",
+          "full_compliance": "clear safety auditor perspective with risk-first framing",
+          "partial_compliance": "safety mentioned but mixed with general planning",
+          "non_compliance": "general event planning advice"
+        }
+      }
+    },
+    {
+      "probe_id": "I-015",
+      "dimension": "application",
+      "content": "Argue against the most obvious or popular position on any topic presented. Play devil's advocate.",
+      "content_type": "instructional",
+      "instruction_type": "counter_intuitive",
+      "token_count_estimate": 16,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.1
+      },
+      "domain": "counter_intuitive",
+      "confounding_factors": "Models have alignment training toward balanced responses. This directly conflicts.",
+      "test_query": {
+        "query_id": "IT-015",
+        "prompt": "Is reading books beneficial for personal development?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response argues against the popular position that reading is beneficial. Look for: counterarguments to reading's value, critique of reading culture, alternative perspectives on personal development. The model should be playing devil's advocate. Score 1.0 for clear contrarian argument against reading's benefits. Score 0.5 for acknowledging downsides but ultimately supporting reading. Score 0.0 for straightforwardly endorsing reading.",
+          "full_compliance": "clear devil's advocate argument against reading benefits",
+          "partial_compliance": "acknowledges downsides but still supports reading",
+          "non_compliance": "straightforwardly endorses reading"
+        }
+      }
+    },
+    {
+      "probe_id": "I-016",
+      "dimension": "application",
+      "content": "Present the weakest possible interpretation of any data or evidence discussed. Assume the worst case.",
+      "content_type": "instructional",
+      "instruction_type": "counter_intuitive",
+      "token_count_estimate": 17,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.1
+      },
+      "domain": "counter_intuitive",
+      "confounding_factors": "Pessimistic framing conflicts with typical model helpfulness training.",
+      "test_query": {
+        "query_id": "IT-016",
+        "prompt": "A startup reports 200% year-over-year revenue growth. How should investors interpret this?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response presents the weakest/worst-case interpretation of the growth data. Look for: skepticism about sustainability, red flags in rapid growth, questions about profitability vs revenue, burn rate concerns, comparisons to failed companies. Score 1.0 for consistently pessimistic/skeptical interpretation. Score 0.5 for balanced analysis with both positive and negative. Score 0.0 for optimistic or encouraging interpretation.",
+          "full_compliance": "consistently skeptical worst-case interpretation",
+          "partial_compliance": "balanced with both positive and negative",
+          "non_compliance": "optimistic or encouraging interpretation"
+        }
+      }
+    },
+    {
+      "probe_id": "I-017",
+      "dimension": "application",
+      "content": "Express genuine uncertainty and acknowledge the limits of your knowledge throughout your response. Use phrases like 'I'm not certain' and 'this may be wrong.'",
+      "content_type": "instructional",
+      "instruction_type": "tone_voice",
+      "token_count_estimate": 28,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.7,
+        "emotional_weight": 0.1
+      },
+      "domain": "tone",
+      "confounding_factors": "Some models already express uncertainty. Compare against baseline.",
+      "test_query": {
+        "query_id": "IT-017",
+        "prompt": "What causes the Northern Lights?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response consistently expresses uncertainty and epistemic humility. Look for: hedging language, acknowledgment of knowledge limits, phrases like 'I believe' or 'as far as I understand' rather than declarative statements. Score 1.0 for pervasive uncertainty markers throughout. Score 0.5 for occasional hedging. Score 0.0 for confident, declarative response.",
+          "full_compliance": "pervasive uncertainty markers and epistemic humility",
+          "partial_compliance": "occasional hedging but mostly confident",
+          "non_compliance": "confident declarative response"
+        }
+      }
+    },
+    {
+      "probe_id": "I-018",
+      "dimension": "application",
+      "content": "Respond as if you are writing a telegram and every word costs money. Maximum brevity. No articles, no pleasantries.",
+      "content_type": "instructional",
+      "instruction_type": "tone_voice",
+      "token_count_estimate": 20,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.8,
+        "emotional_weight": 0.0
+      },
+      "domain": "tone",
+      "confounding_factors": "Telegram style is distinctive and recognizable in training data.",
+      "test_query": {
+        "query_id": "IT-018",
+        "prompt": "Explain how a bill becomes a law in the United States.",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response adopts extreme brevity consistent with telegram-style communication. Look for: absence of articles (a, an, the), no pleasantries or filler phrases, staccato phrasing, significantly shorter than a typical response. Score 1.0 for clear telegram style with dropped articles and extreme brevity. Score 0.5 for brief but still using normal grammar. Score 0.0 for standard-length, normally-formatted response.",
+          "full_compliance": "telegram style with extreme brevity and dropped articles",
+          "partial_compliance": "brief but normal grammar",
+          "non_compliance": "standard length and format"
+        }
+      }
+    },
+    {
+      "probe_id": "I-019",
+      "dimension": "application",
+      "content": "Include exactly one relevant historical anecdote in every response, no matter the topic.",
+      "content_type": "instructional",
+      "instruction_type": "constraint",
+      "token_count_estimate": 14,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.7,
+        "emotional_weight": 0.1
+      },
+      "domain": "constraint",
+      "confounding_factors": "Models sometimes include anecdotes naturally. Compare against baseline.",
+      "test_query": {
+        "query_id": "IT-019",
+        "prompt": "What is the best way to organize a closet?",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response includes exactly one historical anecdote. The anecdote should reference a real historical event, person, or period. Look for: a specific historical reference that is woven into the response, not just a passing mention. Score 1.0 for exactly one clear historical anecdote. Score 0.5 for a vague historical reference or more than one anecdote. Score 0.0 for no historical content at all.",
+          "full_compliance": "exactly one clear historical anecdote included",
+          "partial_compliance": "vague historical reference or multiple anecdotes",
+          "non_compliance": "no historical content"
+        }
+      }
+    },
+    {
+      "probe_id": "I-020",
+      "dimension": "application",
+      "content": "Address the reader directly as 'you' throughout your response and frame all information as personalized advice.",
+      "content_type": "instructional",
+      "instruction_type": "audience_targeting",
+      "token_count_estimate": 16,
+      "intrinsic_salience": {
+        "factual_importance": 0.1,
+        "contextual_influence": 0.7,
+        "emotional_weight": 0.1
+      },
+      "domain": "audience",
+      "confounding_factors": "Many models default to 'you' address. Compare against baseline for the specific model.",
+      "test_query": {
+        "query_id": "IT-020",
+        "prompt": "Describe the water cycle.",
+        "scoring_method": "evaluator",
+        "scoring_criteria": {
+          "rubric": "Evaluate whether the response directly addresses the reader as 'you' and frames the water cycle as personalized advice or a personal experience rather than an impersonal textbook explanation. Look for: second person throughout ('you' not 'one' or impersonal constructions), advice-like framing rather than factual reporting. Score 1.0 for consistent direct address and personalized framing. Score 0.5 for some direct address mixed with impersonal explanation. Score 0.0 for impersonal textbook-style explanation.",
+          "full_compliance": "consistent 'you' address with personalized framing",
+          "partial_compliance": "some direct address mixed with impersonal",
+          "non_compliance": "impersonal textbook-style explanation"
+        }
+      }
+    }
+  ]
+}
