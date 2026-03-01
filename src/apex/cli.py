@@ -22,6 +22,8 @@ def cmd_run(args: argparse.Namespace) -> None:
     from apex.storage import ResultStore
 
     config = load_config(args.config)
+    if args.workers is not None:
+        config.workers = args.workers
     library = ProbeLibrary(config.data_dir)
     dsn = config.database_dsn
     store = ResultStore(dsn)
@@ -32,6 +34,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     print(f"  Positions: {config.positions}")
     print(f"  Context lengths: {config.context_lengths}")
     print(f"  Repetitions: {config.repetitions}")
+    print(f"  Workers: {config.workers}")
     print(f"  Database: {dsn}")
     print()
 
@@ -378,6 +381,7 @@ def main(argv: list[str] | None = None) -> None:
     # run
     p_run = subparsers.add_parser("run", help="Execute a probe run")
     p_run.add_argument("config", help="Path to YAML config file")
+    p_run.add_argument("--workers", type=int, default=None, help="Number of parallel workers (overrides config)")
     p_run.set_defaults(func=cmd_run)
 
     # status

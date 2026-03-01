@@ -475,6 +475,127 @@ class QueryManager:
                 conn.close()
 
     # ------------------------------------------------------------------
+    # Server launch history
+    # ------------------------------------------------------------------
+
+    def record_launch(
+        self,
+        launch_id: str,
+        node: str,
+        model_path: str,
+        port: int,
+        requested_ctx_per_slot: int,
+        parallel: int,
+        total_ctx: int,
+        gpu_layers: int,
+        threads: int | None,
+        flash_attn: bool,
+        llama_server_bin: str,
+        pid: int,
+        status: str,
+        launched_at: str,
+        notes: str | None = None,
+    ) -> None:
+        """INSERT a server launch record."""
+        from apex.db import LAUNCH_COLUMN_NAMES
+
+        values = (
+            launch_id, node, model_path, port, requested_ctx_per_slot,
+            parallel, total_ctx, gpu_layers, threads, int(flash_attn),
+            llama_server_bin, pid, status, None, None, None, None,
+            launched_at, notes,
+        )
+        cols = ", ".join(LAUNCH_COLUMN_NAMES)
+        phs = ", ".join(self._ph for _ in LAUNCH_COLUMN_NAMES)
+        sql = f"INSERT INTO server_launches ({cols}) VALUES ({phs})"
+
+        if self._is_postgres:
+            try:
+                with self._pg_conn.cursor() as cur:
+                    cur.execute(sql, values)
+                self._pg_conn.commit()
+            except Exception:
+                self._pg_conn.rollback()
+                raise
+        else:
+            conn = sqlite3.connect(self._db_path)
+            try:
+                conn.execute(sql, values)
+                conn.commit()
+            finally:
+                conn.close()
+
+    def update_launch_actual(
+        self,
+        launch_id: str,
+        actual_ctx_per_slot: int | None = None,
+        model_id_reported: str | None = None,
+        n_params: int | None = None,
+        n_ctx_train: int | None = None,
+        notes: str | None = None,
+    ) -> None:
+        """UPDATE a launch record with post-startup values."""
+        sql = (
+            f"UPDATE server_launches SET "
+            f"actual_ctx_per_slot = {self._ph}, "
+            f"model_id_reported = {self._ph}, "
+            f"n_params = {self._ph}, "
+            f"n_ctx_train = {self._ph}, "
+            f"notes = {self._ph}, "
+            f"status = {self._ph} "
+            f"WHERE launch_id = {self._ph}"
+        )
+        status = "running"
+        values = (actual_ctx_per_slot, model_id_reported, n_params, n_ctx_train, notes, status, launch_id)
+
+        if self._is_postgres:
+            try:
+                with self._pg_conn.cursor() as cur:
+                    cur.execute(sql, values)
+                self._pg_conn.commit()
+            except Exception:
+                self._pg_conn.rollback()
+                raise
+        else:
+            conn = sqlite3.connect(self._db_path)
+            try:
+                conn.execute(sql, values)
+                conn.commit()
+            finally:
+                conn.close()
+
+    def get_launch_history(self, limit: int = 20) -> pd.DataFrame:
+        """SELECT recent server launches, newest first."""
+        conn = self._connect()
+        try:
+            return self._query_df(
+                f"SELECT * FROM server_launches ORDER BY launched_at DESC LIMIT {self._ph}",
+                conn,
+                params=(limit,),
+            )
+        except Exception:
+            return pd.DataFrame()
+        finally:
+            self._release(conn)
+
+    def get_launch_by_id(self, launch_id: str) -> dict | None:
+        """Return a single launch record as dict, or None."""
+        conn = self._connect()
+        try:
+            df = self._query_df(
+                f"SELECT * FROM server_launches WHERE launch_id = {self._ph}",
+                conn,
+                params=(launch_id,),
+            )
+            if df.empty:
+                return None
+            return df.iloc[0].to_dict()
+        except Exception:
+            return None
+        finally:
+            self._release(conn)
+
+    # ------------------------------------------------------------------
     # Aggregation (in pandas, not SQL)
     # ------------------------------------------------------------------
 

@@ -49,6 +49,31 @@ UNIQUE_KEY = ("model_id", "probe_id", "target_position_percent", "context_length
 # Non-key columns — updated on upsert conflict.
 _DATA_COLUMNS = [name for name in COLUMN_NAMES if name not in UNIQUE_KEY]
 
+# Column definitions for server_launches table.
+_LAUNCH_COLUMNS = [
+    ("launch_id", "TEXT NOT NULL"),
+    ("node", "TEXT NOT NULL"),
+    ("model_path", "TEXT NOT NULL"),
+    ("port", "INTEGER NOT NULL"),
+    ("requested_ctx_per_slot", "INTEGER NOT NULL"),
+    ("parallel", "INTEGER NOT NULL"),
+    ("total_ctx", "INTEGER NOT NULL"),
+    ("gpu_layers", "INTEGER NOT NULL"),
+    ("threads", "INTEGER"),
+    ("flash_attn", "INTEGER NOT NULL"),
+    ("llama_server_bin", "TEXT NOT NULL"),
+    ("pid", "INTEGER NOT NULL"),
+    ("status", "TEXT NOT NULL"),
+    ("actual_ctx_per_slot", "INTEGER"),
+    ("model_id_reported", "TEXT"),
+    ("n_params", "INTEGER"),
+    ("n_ctx_train", "INTEGER"),
+    ("launched_at", "TEXT NOT NULL"),
+    ("notes", "TEXT"),
+]
+
+LAUNCH_COLUMN_NAMES = [name for name, _ in _LAUNCH_COLUMNS]
+
 
 class DatabaseBackend(ABC):
     """Abstract database backend."""
@@ -128,6 +153,23 @@ CREATE INDEX IF NOT EXISTS idx_run_uuid
 """)
         self._conn.commit()
 
+        # Server launches table
+        launch_col_defs = ",\n    ".join(
+            f"{name} {typedef}" for name, typedef in _LAUNCH_COLUMNS
+        )
+        self._conn.execute(f"""
+CREATE TABLE IF NOT EXISTS server_launches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    {launch_col_defs},
+    UNIQUE(launch_id)
+)""")
+        self._conn.commit()
+        self.ensure_launch_columns()
+        self._conn.execute("""
+CREATE INDEX IF NOT EXISTS idx_launch_timestamp
+    ON server_launches(launched_at)""")
+        self._conn.commit()
+
     def ensure_columns(self) -> None:
         cursor = self._conn.execute("PRAGMA table_info(probe_results)")
         existing = {row[1] for row in cursor.fetchall()}
@@ -136,6 +178,16 @@ CREATE INDEX IF NOT EXISTS idx_run_uuid
                 col_type = typedef.replace("{float}", "REAL")
                 self._conn.execute(
                     f"ALTER TABLE probe_results ADD COLUMN {name} {col_type}"
+                )
+        self._conn.commit()
+
+    def ensure_launch_columns(self) -> None:
+        cursor = self._conn.execute("PRAGMA table_info(server_launches)")
+        existing = {row[1] for row in cursor.fetchall()}
+        for name, typedef in _LAUNCH_COLUMNS:
+            if name not in existing:
+                self._conn.execute(
+                    f"ALTER TABLE server_launches ADD COLUMN {name} {typedef}"
                 )
         self._conn.commit()
 
@@ -191,6 +243,25 @@ CREATE INDEX IF NOT EXISTS idx_run_uuid
     ON probe_results(run_uuid)""")
         self._conn.commit()
 
+        # Server launches table
+        launch_col_defs = ",\n    ".join(
+            f"{name} {typedef}" for name, typedef in _LAUNCH_COLUMNS
+        )
+        with self._conn.cursor() as cur:
+            cur.execute(f"""
+CREATE TABLE IF NOT EXISTS server_launches (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    {launch_col_defs},
+    UNIQUE(launch_id)
+)""")
+        self._conn.commit()
+        self.ensure_launch_columns()
+        with self._conn.cursor() as cur:
+            cur.execute("""
+CREATE INDEX IF NOT EXISTS idx_launch_timestamp
+    ON server_launches(launched_at)""")
+        self._conn.commit()
+
     def ensure_columns(self) -> None:
         with self._conn.cursor() as cur:
             cur.execute(
@@ -204,6 +275,21 @@ CREATE INDEX IF NOT EXISTS idx_run_uuid
                 with self._conn.cursor() as cur:
                     cur.execute(
                         f"ALTER TABLE probe_results ADD COLUMN {name} {col_type}"
+                    )
+        self._conn.commit()
+
+    def ensure_launch_columns(self) -> None:
+        with self._conn.cursor() as cur:
+            cur.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'server_launches'"
+            )
+            existing = {row[0] for row in cur.fetchall()}
+        for name, typedef in _LAUNCH_COLUMNS:
+            if name not in existing:
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        f"ALTER TABLE server_launches ADD COLUMN {name} {typedef}"
                     )
         self._conn.commit()
 

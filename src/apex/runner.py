@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
 from tqdm import tqdm
@@ -94,10 +96,9 @@ class ProbeRunner:
             logger.error("Unknown probe selector: %s", sel)
             return []
 
-    def _run_model(self, model_cfg: ModelConfig, probes) -> None:
-        logger.info("Running model: %s (%s)", model_cfg.name, model_cfg.backend)
-
-        adapter = get_adapter(
+    def _make_adapter(self, model_cfg: ModelConfig) -> ModelAdapter:
+        """Create a ModelAdapter for the given config."""
+        return get_adapter(
             backend=model_cfg.backend,
             model_name=model_cfg.model_name,
             base_url=model_cfg.base_url,
@@ -112,22 +113,29 @@ class ProbeRunner:
                 "tokenizer": model_cfg.tokenizer,
             },
         )
+
+    def _make_evaluator_adapter(self) -> ModelAdapter | None:
+        """Create an evaluator adapter if configured, else None."""
+        if not self.config.evaluator_models:
+            return None
+        ev_cfg = self.config.evaluator_models[0]
+        return get_adapter(
+            backend=ev_cfg.backend,
+            model_name=ev_cfg.model_name,
+            base_url=ev_cfg.base_url,
+            api_key=ev_cfg.api_key,
+            temperature=0.0,
+            model_info_overrides={"model_id": ev_cfg.name},
+        )
+
+    def _run_model(self, model_cfg: ModelConfig, probes) -> None:
+        logger.info("Running model: %s (%s)", model_cfg.name, model_cfg.backend)
+
+        adapter = self._make_adapter(model_cfg)
         model_info = adapter.get_model_info()
         tokenizer = get_tokenizer(model_cfg.tokenizer)
 
-        # Build evaluator adapter if needed
-        evaluator_adapter = None
-        if self.config.evaluator_models:
-            ev_cfg = self.config.evaluator_models[0]
-            evaluator_adapter = get_adapter(
-                backend=ev_cfg.backend,
-                model_name=ev_cfg.model_name,
-                base_url=ev_cfg.base_url,
-                api_key=ev_cfg.api_key,
-                temperature=0.0,
-                model_info_overrides={"model_id": ev_cfg.name},
-            )
-
+        evaluator_adapter = self._make_evaluator_adapter()
         dispatcher = ScoringDispatcher(evaluator_adapter)
         fillers = self.library.get_fillers(self.config.filler_type_enum)
         assembler = PromptAssembler(tokenizer, fillers)
@@ -156,11 +164,63 @@ class ProbeRunner:
             len(queue), model_info.model_id, len(completed),
         )
 
-        for probe, query, pos, ctx_len, run_num in tqdm(queue, desc=model_info.model_id):
+        if self.config.workers <= 1:
+            # Sequential path — zero overhead, same behavior as before
+            for probe, query, pos, ctx_len, run_num in tqdm(queue, desc=model_info.model_id):
+                self._execute_probe(
+                    adapter, model_info, assembler, dispatcher,
+                    probe, query, pos, ctx_len, run_num,
+                )
+        else:
+            # Parallel path — per-thread resources via threading.local()
+            self._run_model_parallel(
+                model_cfg, model_info, assembler, queue,
+            )
+
+    def _run_model_parallel(
+        self,
+        model_cfg: ModelConfig,
+        model_info: ModelInfo,
+        assembler: PromptAssembler,
+        queue: list,
+    ) -> None:
+        """Execute probes in parallel using ThreadPoolExecutor."""
+        local = threading.local()
+        thread_stores: list[ResultStore] = []
+        stores_lock = threading.Lock()
+
+        def _get_thread_resources():
+            """Lazily initialize per-thread adapter, store, and dispatcher."""
+            if not hasattr(local, "adapter"):
+                local.adapter = self._make_adapter(model_cfg)
+                local.store = ResultStore(self.config.database_dsn)
+                local.dispatcher = ScoringDispatcher(self._make_evaluator_adapter())
+                with stores_lock:
+                    thread_stores.append(local.store)
+            return local.adapter, local.store, local.dispatcher
+
+        def _worker(item):
+            probe, query, pos, ctx_len, run_num = item
+            adapter, store, dispatcher = _get_thread_resources()
             self._execute_probe(
                 adapter, model_info, assembler, dispatcher,
                 probe, query, pos, ctx_len, run_num,
+                store=store,
             )
+
+        with ThreadPoolExecutor(max_workers=self.config.workers) as pool:
+            futures = [pool.submit(_worker, item) for item in queue]
+            for future in tqdm(as_completed(futures), total=len(futures), desc=model_info.model_id):
+                exc = future.exception()
+                if exc is not None:
+                    logger.error("Worker failed: %s", exc)
+
+        # Cleanup per-thread stores
+        for store in thread_stores:
+            try:
+                store.close()
+            except Exception:
+                pass
 
     def _execute_probe(
         self,
@@ -173,6 +233,7 @@ class ProbeRunner:
         position_percent: float,
         context_length: int,
         run_number: int,
+        store: ResultStore | None = None,
     ) -> None:
         """Execute a single probe: two-turn protocol, score, record."""
         assembled = assembler.assemble(
@@ -262,7 +323,8 @@ class ProbeRunner:
             refused=refused,
             run_uuid=self._run_uuid,
         )
-        self.store.write_result(result)
+        target_store = store if store is not None else self.store
+        target_store.write_result(result)
 
     def _call_with_retry(self, fn, *args, max_retries: int = 3, base_delay: float = 2.0):
         """Call fn with exponential backoff retry."""

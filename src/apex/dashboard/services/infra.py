@@ -5,12 +5,20 @@ from __future__ import annotations
 import os
 import re
 import signal
+import socket
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
 
 _DEFAULT_LLAMA_SERVER_BIN = "/programs/llama.cpp/build/bin/llama-server"
+
+
+@dataclass
+class SystemStats:
+    cpu_temp_c: int | None
+    ram_used_gb: float
+    ram_total_gb: float
 
 
 @dataclass
@@ -30,6 +38,8 @@ class ServerInfo:
     port: int
     model_path: str
     status: str  # "healthy", "unreachable", "unknown"
+    ctx_size: int | None = None
+    parallel: int | None = None
 
 
 def get_gpu_stats(node: str = "local") -> GpuStats | None:
@@ -88,6 +98,44 @@ def get_gpu_stats(node: str = "local") -> GpuStats | None:
         return None
 
 
+def get_system_stats() -> SystemStats:
+    """Get CPU temperature and RAM usage. Returns SystemStats with None for unavailable fields."""
+    # CPU temperature via `sensors`
+    cpu_temp: int | None = None
+    try:
+        result = subprocess.run(
+            ["sensors"], capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0:
+            # AMD k10temp: "Tctl:         +77.0°C"
+            # Intel coretemp: "Package id 0:  +55.0°C"
+            for pattern in [r"Tctl:\s*\+?([\d.]+)", r"Package id 0:\s*\+?([\d.]+)"]:
+                m = re.search(pattern, result.stdout)
+                if m:
+                    cpu_temp = int(float(m.group(1)))
+                    break
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    # RAM via /proc/meminfo
+    ram_total_gb = 0.0
+    ram_used_gb = 0.0
+    try:
+        with open("/proc/meminfo") as f:
+            meminfo = f.read()
+        total_match = re.search(r"MemTotal:\s+(\d+)\s+kB", meminfo)
+        avail_match = re.search(r"MemAvailable:\s+(\d+)\s+kB", meminfo)
+        if total_match and avail_match:
+            total_kb = int(total_match.group(1))
+            avail_kb = int(avail_match.group(1))
+            ram_total_gb = round(total_kb / 1_048_576, 1)
+            ram_used_gb = round((total_kb - avail_kb) / 1_048_576, 1)
+    except OSError:
+        pass
+
+    return SystemStats(cpu_temp_c=cpu_temp, ram_used_gb=ram_used_gb, ram_total_gb=ram_total_gb)
+
+
 def get_running_servers(node: str = "local", remote_host: str | None = None) -> list[ServerInfo]:
     """Find llama-server processes via ps. Returns list of ServerInfo."""
     ssh_host = remote_host or node
@@ -119,6 +167,9 @@ def get_running_servers(node: str = "local", remote_host: str | None = None) -> 
             port = _extract_flag(cmdline, "--port", default="8080")
             model_path = _extract_flag(cmdline, "-m") or _extract_flag(cmdline, "--model") or "unknown"
 
+            ctx_str = _extract_flag(cmdline, "-c") or _extract_flag(cmdline, "--ctx-size")
+            parallel_str = _extract_flag(cmdline, "--parallel")
+
             node_label = "node1" if node == "local" else node
             servers.append(ServerInfo(
                 pid=pid,
@@ -126,6 +177,8 @@ def get_running_servers(node: str = "local", remote_host: str | None = None) -> 
                 port=int(port),
                 model_path=model_path,
                 status="unknown",
+                ctx_size=int(ctx_str) if ctx_str else None,
+                parallel=int(parallel_str) if parallel_str else None,
             ))
 
         return servers
@@ -146,6 +199,17 @@ def start_server(
     remote_host: str = "",
 ) -> ServerInfo | None:
     """Launch llama-server locally or via SSH. Returns ServerInfo on success."""
+    # Pre-flight: check if port is already in use
+    check_host = "localhost" if node in ("local", "node1") else (remote_host or node)
+    if _port_in_use(check_host, port):
+        return ServerInfo(
+            pid=0,
+            node="node1" if node in ("local", "node1") else node,
+            port=port,
+            model_path=model_path,
+            status=f"port_in_use",
+        )
+
     server_bin = llama_server_bin or _DEFAULT_LLAMA_SERVER_BIN
     args = [
         server_bin,
@@ -243,6 +307,20 @@ def health_check(base_url: str) -> dict:
         return {"status": "unreachable", "slots": 0}
 
 
+def get_server_slots(base_url: str) -> list[dict] | None:
+    """GET /slots on a llama-server endpoint. Returns slot list or None on error."""
+    import httpx
+
+    try:
+        resp = httpx.get(f"{base_url}/slots", timeout=5)
+        data = resp.json()
+        if isinstance(data, list):
+            return data
+        return None
+    except Exception:
+        return None
+
+
 def check_node_reachable(host: str) -> bool:
     """Quick SSH connectivity test."""
     try:
@@ -253,6 +331,53 @@ def check_node_reachable(host: str) -> bool:
         return result.returncode == 0 and "ok" in result.stdout
     except (subprocess.TimeoutExpired, FileNotFoundError):
         return False
+
+
+def _port_in_use(host: str, port: int, timeout: float = 2.0) -> bool:
+    """Check if a TCP port is already listening."""
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except (ConnectionRefusedError, TimeoutError, OSError):
+        return False
+
+
+def get_server_model_meta(base_url: str) -> dict | None:
+    """GET /v1/models on a llama-server endpoint. Returns model metadata or None."""
+    import httpx
+
+    try:
+        resp = httpx.get(f"{base_url}/v1/models", timeout=5)
+        data = resp.json()
+        models = data.get("data", [])
+        if not models:
+            return None
+        m = models[0]
+        meta = m.get("meta", {})
+        return {
+            "model_id": m.get("id", "unknown"),
+            "n_params": meta.get("n_params", 0),
+            "n_ctx_train": meta.get("n_ctx_train", 0),
+        }
+    except Exception:
+        return None
+
+
+def _format_params(n: int) -> str:
+    """Format parameter count as human-readable string: 32762123264 -> '32B'."""
+    if n <= 0:
+        return "unknown"
+    if n >= 1_000_000_000:
+        return f"{round(n / 1_000_000_000)}B"
+    if n >= 1_000_000:
+        return f"{round(n / 1_000_000)}M"
+    return f"{n}"
+
+
+def _parse_quant_from_filename(name: str) -> str:
+    """Extract quantization from GGUF filename: 'Qwen3-32B-Q4_K_M.gguf' -> 'Q4_K_M'."""
+    m = re.search(r"((?:I?Q\d+_\w+)|(?:F16|F32|BF16))", name)
+    return m.group(1) if m else "unknown"
 
 
 def _extract_flag(cmdline: str, flag: str, default: str | None = None) -> str | None:

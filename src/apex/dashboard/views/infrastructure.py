@@ -72,10 +72,10 @@ def layout(dashboard_config=None) -> html.Div:
                     ], style={"flex": "1", "minWidth": "100px"}),
                 ], style={"display": "flex", "gap": "12px", "marginBottom": "12px", "flexWrap": "wrap"}),
 
-                # Row 2: Context size, GPU layers, Parallel, Threads
+                # Row 2: Context size (per slot), GPU layers, Parallel, Threads
                 html.Div([
                     html.Div([
-                        html.Label("Context Size", style=LABEL_STYLE),
+                        html.Label("Context Size (per slot)", style=LABEL_STYLE),
                         dcc.Input(
                             id="infra-ctx-size", type="number", value=cfg.server_defaults.ctx_size,
                             min=512, max=131072, step=512,
@@ -124,7 +124,10 @@ def layout(dashboard_config=None) -> html.Div:
                             style={"paddingTop": "4px"},
                         ),
                     ], style={"flex": "1"}),
-                ], style={"display": "flex", "gap": "12px", "marginBottom": "16px", "flexWrap": "wrap"}),
+                ], style={"display": "flex", "gap": "12px", "marginBottom": "12px", "flexWrap": "wrap"}),
+
+                # Aggregate context display
+                html.Div(id="infra-ctx-aggregate", style={"marginBottom": "16px"}),
 
                 html.Button(
                     "Start Server", id="infra-start-btn", n_clicks=0,
@@ -141,6 +144,9 @@ def layout(dashboard_config=None) -> html.Div:
 
         # Stop server area
         html.Div(id="infra-stop-feedback", style={"marginTop": "8px", "fontSize": "13px"}),
+
+        # Launch history
+        html.Div(id="infra-launch-history"),
 
         # Node health
         html.Div(id="infra-node-health"),
@@ -263,35 +269,61 @@ def register_callbacks(app, qm, dashboard_config=None):
         for srv in all_servers:
             # Health check
             host = "localhost" if _resolve_host(srv.node) == "local" else _resolve_host(srv.node)
-            hc = infra.health_check(f"http://{host}:{srv.port}")
+            base_url = f"http://{host}:{srv.port}"
+            hc = infra.health_check(base_url)
             srv.status = hc["status"]
+
+            # Slot context info
+            slots_data = infra.get_server_slots(base_url)
 
             status_color = WONG["green"] if srv.status in ("ok", "healthy") else WONG["vermillion"]
             model_name = srv.model_path.split("/")[-1] if "/" in srv.model_path else srv.model_path
 
-            cards.append(html.Div([
+            # Build slot info line
+            slot_info_parts = []
+
+            if slots_data:
+                n_slots = len(slots_data)
+                per_slot_ctx = slots_data[0].get("n_ctx") if slots_data else None
+                if per_slot_ctx is not None:
+                    total_ctx = per_slot_ctx * n_slots
+                    slot_info_parts.append(f"Slots: {n_slots}")
+                    slot_info_parts.append(f"Ctx/slot: {per_slot_ctx:,}")
+                    slot_info_parts.append(f"Total ctx: {total_ctx:,}")
+                else:
+                    slot_info_parts.append(f"Slots: {n_slots}")
+            else:
+                # /slots unavailable — fall back to health check slot count
+                slot_info_parts.append(f"Slots: {hc.get('slots', '?')}")
+
+            info_children = [
+                html.Span(f"Model: {model_name}", style={"fontSize": "13px", "color": TEXT_SECONDARY}),
+                html.Span(
+                    f" | Status: {srv.status} | {' | '.join(slot_info_parts)}",
+                    style={"fontSize": "13px", "color": TEXT_SECONDARY},
+                ),
+            ]
+
+            card_children = [
                 html.Div([
                     html.Span(f"\u25cf", style={"color": status_color, "marginRight": "8px", "fontSize": "16px"}),
                     html.Span(f"{srv.node}:{srv.port}", style={"fontWeight": "700", "marginRight": "16px"}),
                     html.Span(f"PID {srv.pid}", style={"color": TEXT_MUTED, "fontSize": "12px"}),
                 ], style={"marginBottom": "6px"}),
-                html.Div([
-                    html.Span(f"Model: {model_name}", style={"fontSize": "13px", "color": TEXT_SECONDARY}),
-                    html.Span(
-                        f" | Status: {srv.status} | Slots: {hc.get('slots', '?')}",
-                        style={"fontSize": "13px", "color": TEXT_SECONDARY},
-                    ),
-                ], style={"marginBottom": "8px"}),
-                html.Button(
-                    "Stop", id={"type": "infra-stop-btn", "index": f"{srv.node}:{srv.pid}"},
-                    n_clicks=0,
-                    style={
-                        "padding": "4px 16px", "cursor": "pointer",
-                        "backgroundColor": WONG["vermillion"], "color": "#fff",
-                        "border": "none", "borderRadius": "4px", "fontSize": "12px",
-                    },
-                ),
-            ], style={**CARD_STYLE, "padding": "12px 16px"}))
+                html.Div(info_children, style={"marginBottom": "8px"}),
+            ]
+
+            card_children.append(html.Button(
+                "Stop", id={"type": "infra-stop-btn", "index": f"{srv.node}:{srv.pid}"},
+                n_clicks=0,
+                style={
+                    "padding": "4px 16px", "cursor": "pointer",
+                    "backgroundColor": WONG["vermillion"], "color": "#fff",
+                    "border": "none", "borderRadius": "4px", "fontSize": "12px",
+                },
+            ))
+
+            cards.append(html.Div(card_children, style={**CARD_STYLE, "padding": "12px 16px"}))
 
         return html.Div([
             html.H4("Running Servers", style={"marginTop": "0", "marginBottom": "12px"}),
@@ -327,6 +359,26 @@ def register_callbacks(app, qm, dashboard_config=None):
             return html.Span(f"Sent stop signal to PID {pid} on {node}.", style={"color": WONG["green"]})
         return html.Span(f"Failed to stop PID {pid}.", style={"color": WONG["vermillion"]})
 
+    # Aggregate context display
+    @app.callback(
+        Output("infra-ctx-aggregate", "children"),
+        Input("infra-ctx-size", "value"),
+        Input("infra-parallel", "value"),
+    )
+    def update_ctx_aggregate(ctx_size, parallel):
+        per_slot = int(ctx_size or cfg.server_defaults.ctx_size)
+        slots = int(parallel or cfg.server_defaults.parallel)
+        total = per_slot * slots
+        if slots <= 1:
+            return html.Span(
+                f"Total context: {total:,} tokens (1 slot)",
+                style={"fontSize": "12px", "color": TEXT_SECONDARY},
+            )
+        return html.Span(
+            f"Total context: {per_slot:,} x {slots} slots = {total:,} tokens",
+            style={"fontSize": "12px", "color": TEXT_SECONDARY},
+        )
+
     # Start server
     @app.callback(
         Output("infra-start-feedback", "children"),
@@ -347,21 +399,61 @@ def register_callbacks(app, qm, dashboard_config=None):
         if not port:
             return html.Span("Port is required.", style={"color": WONG["orange"]})
 
+        per_slot = int(ctx_size or cfg.server_defaults.ctx_size)
+        slots = int(parallel or cfg.server_defaults.parallel)
+        total_ctx = per_slot * slots
+        flash_on = bool(flash_attn and "on" in flash_attn)
+        ngl = int(gpu_layers or cfg.server_defaults.gpu_layers)
+        thread_count = int(threads) if threads else None
+
         result = infra.start_server(
             node=node,
             model_path=model_path,
             port=int(port),
-            ctx_size=int(ctx_size or cfg.server_defaults.ctx_size),
-            flash_attn=bool(flash_attn and "on" in flash_attn),
-            threads=int(threads) if threads else None,
-            parallel=int(parallel or cfg.server_defaults.parallel),
-            gpu_layers=int(gpu_layers or cfg.server_defaults.gpu_layers),
+            ctx_size=total_ctx,
+            flash_attn=flash_on,
+            threads=thread_count,
+            parallel=slots,
+            gpu_layers=ngl,
             llama_server_bin=cfg.infra.llama_server_bin,
             remote_host=_resolve_host(node) if _resolve_host(node) != "local" else "",
         )
 
         if not result:
             return html.Span("Failed to start server.", style={"color": WONG["vermillion"]})
+
+        # Record the launch (best-effort)
+        from uuid import uuid4
+        from datetime import datetime, timezone
+
+        launch_id = str(uuid4())
+        launch_status = result.status
+        try:
+            qm.record_launch(
+                launch_id=launch_id,
+                node=result.node,
+                model_path=model_path,
+                port=int(port),
+                requested_ctx_per_slot=per_slot,
+                parallel=slots,
+                total_ctx=total_ctx,
+                gpu_layers=ngl,
+                threads=thread_count,
+                flash_attn=flash_on,
+                llama_server_bin=cfg.infra.llama_server_bin,
+                pid=result.pid,
+                status=launch_status,
+                launched_at=datetime.now(timezone.utc).isoformat(),
+            )
+        except Exception:
+            pass
+
+        if result.status == "port_in_use":
+            return html.Span(
+                f"Port {result.port} is already in use on {result.node}. "
+                "Stop the existing server first.",
+                style={"color": WONG["orange"]},
+            )
 
         if result.status.startswith("crashed"):
             err_detail = result.status[len("crashed"):].lstrip(": ") or "process exited immediately"
@@ -372,6 +464,54 @@ def register_callbacks(app, qm, dashboard_config=None):
                 ),
                 html.Span(err_detail, style={"color": TEXT_SECONDARY, "fontSize": "12px"}),
             ])
+
+        # Spawn daemon thread to poll /slots and /v1/models for actual context
+        import threading
+
+        def _poll_actual_ctx():
+            import time as _time
+
+            host = "localhost" if _resolve_host(node) == "local" else _resolve_host(node)
+            base_url = f"http://{host}:{int(port)}"
+
+            slots_data = None
+            for _ in range(6):
+                _time.sleep(5)
+                slots_data = infra.get_server_slots(base_url)
+                if slots_data:
+                    break
+
+            if not slots_data:
+                return
+
+            actual_per_slot = slots_data[0].get("n_ctx") if slots_data else None
+            meta = infra.get_server_model_meta(base_url)
+            model_id_reported = meta.get("model_id") if meta else None
+            n_params = meta.get("n_params") if meta else None
+            n_ctx_train = meta.get("n_ctx_train") if meta else None
+
+            notes = None
+            if actual_per_slot is not None and actual_per_slot != per_slot:
+                notes = (
+                    f"Context truncated: requested {per_slot:,}/slot "
+                    f"but server allocated {actual_per_slot:,}/slot "
+                    f"(likely --fit reduced context to fit VRAM)"
+                )
+
+            try:
+                qm.update_launch_actual(
+                    launch_id=launch_id,
+                    actual_ctx_per_slot=actual_per_slot,
+                    model_id_reported=model_id_reported,
+                    n_params=n_params,
+                    n_ctx_train=n_ctx_train,
+                    notes=notes,
+                )
+            except Exception:
+                pass
+
+        t = threading.Thread(target=_poll_actual_ctx, daemon=True)
+        t.start()
 
         return html.Span(
             f"Started llama-server on {result.node}:{result.port} (PID {result.pid})",
@@ -407,14 +547,132 @@ def register_callbacks(app, qm, dashboard_config=None):
             *rows,
         ], style=CARD_STYLE)
 
+    # Launch history
+    @app.callback(
+        Output("infra-launch-history", "children"),
+        Input("infra-interval", "n_intervals"),
+    )
+    def update_launch_history(_n):
+        try:
+            df = qm.get_launch_history(limit=20)
+        except Exception:
+            df = None
+        if df is None or df.empty:
+            return html.Div()
+
+        cards = []
+        for _, row in df.iterrows():
+            launch_id = row.get("launch_id", "")
+            model_name = str(row.get("model_path", "")).split("/")[-1]
+            status = str(row.get("status", "unknown"))
+            launched_at = str(row.get("launched_at", ""))[:19]
+            req_ctx = row.get("requested_ctx_per_slot")
+            par = row.get("parallel")
+            total = row.get("total_ctx")
+            ngl = row.get("gpu_layers")
+            flash = row.get("flash_attn")
+            actual_ctx = row.get("actual_ctx_per_slot")
+            notes = row.get("notes")
+
+            status_color = WONG["green"] if status == "running" else (
+                WONG["orange"] if status in ("unknown", "port_in_use") else WONG["vermillion"]
+            )
+
+            config_parts = []
+            if req_ctx is not None and par is not None:
+                config_parts.append(f"ctx: {int(req_ctx):,}/slot x {int(par)} slots = {int(total):,} total")
+            if ngl is not None:
+                config_parts.append(f"GPU layers: {int(ngl)}")
+            if flash is not None:
+                config_parts.append(f"flash: {'on' if flash else 'off'}")
+            config_line = " | ".join(config_parts)
+
+            children = [
+                html.Div([
+                    html.Span(model_name, style={"fontWeight": "700", "marginRight": "12px"}),
+                    html.Span(
+                        status,
+                        style={"color": status_color, "fontSize": "12px", "marginRight": "12px"},
+                    ),
+                    html.Span(launched_at, style={"color": TEXT_MUTED, "fontSize": "12px"}),
+                ], style={"marginBottom": "4px"}),
+                html.Div(config_line, style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginBottom": "4px"}),
+            ]
+
+            # Context truncation warning
+            if actual_ctx is not None and req_ctx is not None and int(actual_ctx) != int(req_ctx):
+                children.append(html.Div(
+                    f"Context truncated: requested {int(req_ctx):,}/slot, "
+                    f"actual {int(actual_ctx):,}/slot",
+                    style={"fontSize": "12px", "color": WONG["orange"], "marginBottom": "4px"},
+                ))
+
+            if notes:
+                children.append(html.Div(
+                    str(notes),
+                    style={"fontSize": "11px", "color": TEXT_MUTED, "marginBottom": "4px"},
+                ))
+
+            children.append(html.Button(
+                "Re-launch",
+                id={"type": "infra-relaunch-btn", "index": launch_id},
+                n_clicks=0,
+                style={
+                    "padding": "2px 12px", "cursor": "pointer",
+                    "backgroundColor": WONG["blue"], "color": "#000",
+                    "border": "none", "borderRadius": "4px", "fontSize": "11px",
+                },
+            ))
+
+            cards.append(html.Div(children, style={**CARD_STYLE, "padding": "10px 14px"}))
+
+        return html.Div([
+            html.H4("Launch History", style={"marginTop": "16px", "marginBottom": "12px"}),
+            *cards,
+        ])
+
+    # Re-launch from history
+    @app.callback(
+        Output("infra-node-select", "value", allow_duplicate=True),
+        Output("infra-model-select", "value", allow_duplicate=True),
+        Output("infra-port", "value", allow_duplicate=True),
+        Output("infra-ctx-size", "value", allow_duplicate=True),
+        Output("infra-gpu-layers", "value", allow_duplicate=True),
+        Output("infra-parallel", "value", allow_duplicate=True),
+        Output("infra-threads", "value", allow_duplicate=True),
+        Output("infra-flash-attn", "value", allow_duplicate=True),
+        Input({"type": "infra-relaunch-btn", "index": ALL}, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def relaunch_from_history(n_clicks_list):
+        from dash import ctx
+        if not ctx.triggered_id or not any(n_clicks_list):
+            return (no_update,) * 8
+
+        launch_id = ctx.triggered_id.get("index", "")
+        rec = qm.get_launch_by_id(launch_id)
+        if not rec:
+            return (no_update,) * 8
+
+        return (
+            rec.get("node", no_update),
+            rec.get("model_path", no_update),
+            rec.get("port", no_update),
+            rec.get("requested_ctx_per_slot", no_update),
+            rec.get("gpu_layers", no_update),
+            rec.get("parallel", no_update),
+            rec.get("threads") or 0,
+            ["on"] if rec.get("flash_attn") else [],
+        )
+
     # Sync form defaults when settings are saved
     @app.callback(
-        Output("infra-port", "value"),
-        Output("infra-ctx-size", "value"),
-        Output("infra-gpu-layers", "value"),
-        Output("infra-parallel", "value"),
-        Output("infra-threads", "value"),
-        Output("infra-flash-attn", "value"),
+        Output("infra-port", "value", allow_duplicate=True),
+        Output("infra-ctx-size", "value", allow_duplicate=True),
+        Output("infra-gpu-layers", "value", allow_duplicate=True),
+        Output("infra-parallel", "value", allow_duplicate=True),
+        Output("infra-threads", "value", allow_duplicate=True),
+        Output("infra-flash-attn", "value", allow_duplicate=True),
         Input("config-version", "data"),
         prevent_initial_call=True,
     )

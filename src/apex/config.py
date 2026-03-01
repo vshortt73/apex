@@ -38,9 +38,13 @@ class RunConfig:
     output_db: str = "results.db"
     database_url: str | None = None
     positions: list[float] = field(
-        default_factory=lambda: [0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.98]
+        default_factory=lambda: [
+            0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
+            0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95,
+        ]
     )
     context_lengths: list[int] = field(default_factory=lambda: [4096])
+    workers: int = 1
     probe_select: str | list[str] = "all"
     models: list[ModelConfig] = field(default_factory=list)
     evaluator_models: list[ModelConfig] = field(default_factory=list)
@@ -80,8 +84,12 @@ def load_config(path: str | Path) -> RunConfig:
         data_dir=data_sec.get("directory", "data"),
         output_db=data_sec.get("output_db", "results.db"),
         database_url=database_sec.get("url"),
-        positions=data.get("positions", [0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.98]),
+        positions=data.get("positions", [
+            0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
+            0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95,
+        ]),
         context_lengths=data.get("context_lengths", [4096]),
+        workers=run.get("workers", 1),
         probe_select=probes_sec.get("select", "all"),
     )
 
@@ -123,6 +131,9 @@ def validate_config(config: RunConfig) -> list[str]:
 
     if config.repetitions < 1:
         errors.append("Repetitions must be >= 1")
+
+    if config.workers < 1:
+        errors.append("Workers must be >= 1")
 
     if config.temperature < 0.0:
         errors.append("Temperature must be >= 0")

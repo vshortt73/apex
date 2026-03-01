@@ -50,7 +50,7 @@ def build_app(db_path: str) -> Dash:
 
     app = Dash(
         __name__,
-        title="APEX Dashboard",
+        title="APEX Console",
         suppress_callback_exceptions=True,
         assets_folder=_ASSETS_DIR,
     )
@@ -74,7 +74,7 @@ def build_app(db_path: str) -> Dash:
     app.layout = html.Div([
         # Header
         html.Div([
-            html.H2("APEX Dashboard", style={"margin": "0", "flex": "1", "color": TEXT_PRIMARY}),
+            html.H2("APEX Console", style={"margin": "0", "flex": "1", "color": TEXT_PRIMARY}),
             html.Div([
                 html.Button(
                     "Pause", id="refresh-toggle", n_clicks=0,

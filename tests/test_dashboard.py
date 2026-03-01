@@ -274,6 +274,85 @@ class TestAnalysis:
         assert "target_position_percent" in spots.columns
 
 
+# ---- Launch history tests ----
+
+class TestLaunchHistory:
+    def test_record_and_retrieve_launch(self, qm):
+        qm.record_launch(
+            launch_id="launch-001",
+            node="node1",
+            model_path="/models/test.gguf",
+            port=8080,
+            requested_ctx_per_slot=8192,
+            parallel=2,
+            total_ctx=16384,
+            gpu_layers=999,
+            threads=None,
+            flash_attn=True,
+            llama_server_bin="/usr/bin/llama-server",
+            pid=12345,
+            status="unknown",
+            launched_at="2026-02-28T12:00:00+00:00",
+        )
+        df = qm.get_launch_history()
+        assert len(df) == 1
+        row = df.iloc[0]
+        assert row["launch_id"] == "launch-001"
+        assert row["node"] == "node1"
+        assert row["model_path"] == "/models/test.gguf"
+        assert row["port"] == 8080
+        assert row["requested_ctx_per_slot"] == 8192
+        assert row["parallel"] == 2
+        assert row["total_ctx"] == 16384
+        assert row["gpu_layers"] == 999
+        assert row["flash_attn"] == 1
+        assert row["pid"] == 12345
+        assert row["status"] == "unknown"
+
+    def test_update_launch_actual(self, qm):
+        qm.record_launch(
+            launch_id="launch-002",
+            node="node1",
+            model_path="/models/test.gguf",
+            port=8080,
+            requested_ctx_per_slot=8192,
+            parallel=2,
+            total_ctx=16384,
+            gpu_layers=999,
+            threads=None,
+            flash_attn=True,
+            llama_server_bin="/usr/bin/llama-server",
+            pid=12346,
+            status="unknown",
+            launched_at="2026-02-28T12:01:00+00:00",
+        )
+        qm.update_launch_actual(
+            launch_id="launch-002",
+            actual_ctx_per_slot=4096,
+            model_id_reported="test-model-7b",
+            n_params=7000000000,
+            n_ctx_train=8192,
+            notes="Context truncated: requested 8,192/slot but server allocated 4,096/slot",
+        )
+        rec = qm.get_launch_by_id("launch-002")
+        assert rec is not None
+        assert rec["actual_ctx_per_slot"] == 4096
+        assert rec["model_id_reported"] == "test-model-7b"
+        assert rec["n_params"] == 7000000000
+        assert rec["n_ctx_train"] == 8192
+        assert "truncated" in rec["notes"].lower()
+        assert rec["status"] == "running"
+
+    def test_launch_history_empty(self, db_path):
+        """Fresh QM with no launches returns empty DataFrame."""
+        fresh_qm = QueryManager(db_path)
+        df = fresh_qm.get_launch_history()
+        assert df.empty
+
+    def test_get_launch_by_id_not_found(self, qm):
+        assert qm.get_launch_by_id("nonexistent-id") is None
+
+
 # ---- App creation test ----
 
 class TestAppCreation:
@@ -281,4 +360,4 @@ class TestAppCreation:
         from apex.dashboard import create_app
         app = create_app(str(db_path))
         assert app is not None
-        assert app.title == "APEX Dashboard"
+        assert app.title == "APEX Console"

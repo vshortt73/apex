@@ -52,6 +52,8 @@ def layout(dashboard_config=None) -> html.Div:
         # Store for added models (list of model config dicts)
         dcc.Store(id="runctl-models-store", data=[]),
         dcc.Store(id="runctl-evaluator-store", data=[]),
+        dcc.Store(id="runctl-server-meta-store", data=None),
+        dcc.Store(id="runctl-eval-meta-store", data=None),
 
         # === Model Selection ===
         html.Div([
@@ -59,55 +61,17 @@ def layout(dashboard_config=None) -> html.Div:
 
             html.Div([
                 html.Div([
-                    html.Label("Model File (.gguf)", style=LABEL_STYLE),
-                    dcc.Dropdown(id="runctl-model-file", options=[], placeholder="Select model...", style={"width": "100%"}),
+                    html.Label("Server", style=LABEL_STYLE),
+                    dcc.Dropdown(id="runctl-server-select", options=[], placeholder="Select a running server...", style={"width": "100%"}),
                 ], style={"flex": "3", "minWidth": "300px"}),
-                html.Div([
-                    html.Label("Backend", style=LABEL_STYLE),
-                    dcc.Dropdown(
-                        id="runctl-backend",
-                        options=[
-                            {"label": "llama.cpp", "value": "llamacpp"},
-                            {"label": "Ollama", "value": "ollama"},
-                            {"label": "SGLang", "value": "sglang"},
-                            {"label": "OpenAI", "value": "openai"},
-                            {"label": "Anthropic", "value": "anthropic"},
-                            {"label": "Google", "value": "google"},
-                        ],
-                        value="llamacpp",
-                        clearable=False,
-                        style={"width": "100%"},
-                    ),
-                ], style={"flex": "1", "minWidth": "130px"}),
             ], style={"display": "flex", "gap": "12px", "marginBottom": "12px", "flexWrap": "wrap"}),
+
+            html.Div(id="runctl-server-info", style={"marginBottom": "12px", "fontSize": "13px"}),
 
             html.Div([
                 html.Div([
                     html.Label("Display Name", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-model-name", type="text", placeholder="auto from filename", style=_INPUT_STYLE),
-                ], style={"flex": "1"}),
-                html.Div([
-                    html.Label("Architecture", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-architecture", type="text", placeholder="e.g. llama, qwen2", style=_INPUT_STYLE),
-                ], style={"flex": "1"}),
-                html.Div([
-                    html.Label("Parameters", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-parameters", type="text", placeholder="e.g. 7B, 70B", style=_INPUT_STYLE),
-                ], style={"flex": "1"}),
-                html.Div([
-                    html.Label("Quantization", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-quantization", type="text", placeholder="e.g. Q4_K_M", style=_INPUT_STYLE),
-                ], style={"flex": "1"}),
-            ], style={"display": "flex", "gap": "12px", "marginBottom": "12px", "flexWrap": "wrap"}),
-
-            html.Div([
-                html.Div([
-                    html.Label("Base URL", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-base-url", type="text", placeholder="http://localhost:8080", style=_INPUT_STYLE),
-                ], style={"flex": "2"}),
-                html.Div([
-                    html.Label("Max Context Window", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-max-ctx", type="number", value=8192, min=512, style=_INPUT_STYLE),
+                    dcc.Input(id="runctl-model-name", type="text", placeholder="auto from server", style=_INPUT_STYLE),
                 ], style={"flex": "1"}),
             ], style={"display": "flex", "gap": "12px", "marginBottom": "12px", "flexWrap": "wrap"}),
 
@@ -129,28 +93,11 @@ def layout(dashboard_config=None) -> html.Div:
             ),
             html.Div([
                 html.Div([
-                    html.Label("Backend", style=LABEL_STYLE),
-                    dcc.Dropdown(
-                        id="runctl-eval-backend",
-                        options=[
-                            {"label": "OpenAI", "value": "openai"},
-                            {"label": "Anthropic", "value": "anthropic"},
-                            {"label": "Google", "value": "google"},
-                            {"label": "llama.cpp", "value": "llamacpp"},
-                        ],
-                        placeholder="Select backend...",
-                        style={"width": "100%"},
-                    ),
-                ], style={"flex": "1"}),
-                html.Div([
-                    html.Label("Model Name", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-eval-model-name", type="text", placeholder="e.g. gpt-4o-mini", style=_INPUT_STYLE),
-                ], style={"flex": "2"}),
-                html.Div([
-                    html.Label("Base URL (if applicable)", style=LABEL_STYLE),
-                    dcc.Input(id="runctl-eval-base-url", type="text", placeholder="http://localhost:8080", style=_INPUT_STYLE),
-                ], style={"flex": "2"}),
+                    html.Label("Server", style=LABEL_STYLE),
+                    dcc.Dropdown(id="runctl-eval-server-select", options=[], placeholder="Select a running server...", style={"width": "100%"}),
+                ], style={"flex": "3", "minWidth": "300px"}),
             ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap", "marginBottom": "12px"}),
+            html.Div(id="runctl-eval-info", style={"marginBottom": "12px", "fontSize": "13px"}),
             html.Button(
                 "Set Evaluator", id="runctl-set-eval-btn", n_clicks=0,
                 style={**_BTN_STYLE, "backgroundColor": WONG["purple"], "color": "#000"},
@@ -204,6 +151,7 @@ def layout(dashboard_config=None) -> html.Div:
         # === Context Lengths ===
         html.Div([
             html.H4("Context Lengths", style={"marginTop": "0", "marginBottom": "12px"}),
+            html.Div(id="runctl-ctx-limit-note", style={"marginBottom": "8px"}),
             dcc.Checklist(
                 id="runctl-ctx-lengths",
                 options=[{"label": f" {cl:,}", "value": cl} for cl in COMMON_CTX_LENGTHS],
@@ -342,54 +290,142 @@ def layout(dashboard_config=None) -> html.Div:
 
 def register_callbacks(app, qm, process_manager, dashboard_config=None):
     from apex.dashboard.config import DashboardConfig
-    from apex.dashboard.services import model_catalog
+    from apex.dashboard.services import infra
 
     cfg = dashboard_config or DashboardConfig()
 
-    # Populate model file dropdown
+    # Build a lookup for node host by node name
+    _node_hosts = {n.name: n.host for n in cfg.nodes}
+
+    def _resolve_host(node_name: str) -> str:
+        return _node_hosts.get(node_name, node_name)
+
+    def _discover_servers():
+        """Find all running servers across configured nodes with health status."""
+        options = []
+        for node in cfg.nodes:
+            if not node.enabled:
+                continue
+            if node.host == "local":
+                servers = infra.get_running_servers("local")
+            else:
+                servers = infra.get_running_servers(node.name, remote_host=node.host)
+
+            for srv in servers:
+                host = "localhost" if _resolve_host(srv.node) == "local" else _resolve_host(srv.node)
+                base_url = f"http://{host}:{srv.port}"
+                hc = infra.health_check(base_url)
+                model_name = srv.model_path.split("/")[-1] if "/" in srv.model_path else srv.model_path
+                status_tag = "(healthy)" if hc["status"] in ("ok", "healthy") else "(unreachable)"
+                options.append({
+                    "label": f"{srv.node}:{srv.port} — {model_name} {status_tag}",
+                    "value": base_url,
+                })
+        if not options:
+            return [{"label": "No servers — launch from Infrastructure tab", "value": "", "disabled": True}]
+        return options
+
+    # Populate server dropdowns for both models and evaluator
     @app.callback(
-        Output("runctl-model-file", "options"),
+        Output("runctl-server-select", "options"),
+        Output("runctl-eval-server-select", "options"),
         Input("runctl-interval", "n_intervals"),
     )
-    def populate_model_files(_n):
-        models = model_catalog.scan_models(cfg.infra.models_dir)
-        return [
-            {"label": f"{m.filename} ({m.size_gb} GB)", "value": m.path}
-            for m in models
-        ]
+    def populate_server_dropdowns(_n):
+        opts = _discover_servers()
+        return opts, opts
 
-    # Add model to store
+    # On server select — populate meta store, info display, display name
+    @app.callback(
+        Output("runctl-server-info", "children"),
+        Output("runctl-server-meta-store", "data"),
+        Output("runctl-model-name", "value"),
+        Input("runctl-server-select", "value"),
+        prevent_initial_call=True,
+    )
+    def on_server_select(base_url):
+        if not base_url:
+            return "", None, ""
+        model_meta = infra.get_server_model_meta(base_url)
+        slots = infra.get_server_slots(base_url)
+        if not model_meta:
+            return (
+                html.Span("Could not query server metadata.", style={"color": WONG["orange"]}),
+                None, "",
+            )
+
+        model_id = model_meta["model_id"]
+        params_str = infra._format_params(model_meta["n_params"])
+        quant_str = infra._parse_quant_from_filename(model_id)
+        per_slot_ctx = slots[0].get("n_ctx", 0) if slots else 0
+        display_name = model_id.replace(".gguf", "")
+
+        meta = {
+            "model_id": model_id,
+            "model_name": model_id,
+            "parameters": params_str,
+            "quantization": quant_str,
+            "max_context_window": per_slot_ctx,
+            "base_url": base_url,
+        }
+
+        ctx_label = f"{per_slot_ctx:,} ctx/slot" if per_slot_ctx else "unknown ctx"
+        info = html.Span(
+            f"{model_id} | {params_str} | {quant_str} | {ctx_label}",
+            style={"color": WONG["blue"], "fontWeight": "600"},
+        )
+        return info, meta, display_name
+
+    # On eval server select — populate eval meta store and info display
+    @app.callback(
+        Output("runctl-eval-info", "children"),
+        Output("runctl-eval-meta-store", "data"),
+        Input("runctl-eval-server-select", "value"),
+        prevent_initial_call=True,
+    )
+    def on_eval_server_select(base_url):
+        if not base_url:
+            return "", None
+        model_meta = infra.get_server_model_meta(base_url)
+        if not model_meta:
+            return (
+                html.Span("Could not query server metadata.", style={"color": WONG["orange"]}),
+                None,
+            )
+        model_id = model_meta["model_id"]
+        meta = {
+            "model_name": model_id,
+            "base_url": base_url,
+        }
+        info = html.Span(
+            f"Evaluator: {model_id}",
+            style={"color": WONG["purple"], "fontWeight": "600"},
+        )
+        return info, meta
+
+    # Add model to store (simplified — reads from meta store)
     @app.callback(
         Output("runctl-models-store", "data"),
         Input("runctl-add-model-btn", "n_clicks"),
         State("runctl-models-store", "data"),
-        State("runctl-model-file", "value"),
-        State("runctl-backend", "value"),
+        State("runctl-server-meta-store", "data"),
         State("runctl-model-name", "value"),
-        State("runctl-architecture", "value"),
-        State("runctl-parameters", "value"),
-        State("runctl-quantization", "value"),
-        State("runctl-base-url", "value"),
-        State("runctl-max-ctx", "value"),
         prevent_initial_call=True,
     )
-    def add_model(n_clicks, current_models, file_path, backend, name, arch, params, quant, base_url, max_ctx):
-        if not file_path and not name:
+    def add_model(n_clicks, current_models, meta, display_name):
+        if not meta:
             return current_models
 
-        # Auto-derive name from filename
-        if not name and file_path:
-            name = file_path.split("/")[-1].replace(".gguf", "")
-
+        name = display_name or meta.get("model_id", "").replace(".gguf", "") or "unnamed"
         model = {
-            "name": name or "unnamed",
-            "backend": backend or "llamacpp",
-            "model_name": name or "unnamed",
-            "architecture": arch or "unknown",
-            "parameters": params or "unknown",
-            "quantization": quant or "none",
-            "base_url": base_url or None,
-            "max_context_window": int(max_ctx or 8192),
+            "name": name,
+            "backend": "llamacpp",
+            "model_name": meta.get("model_name", name),
+            "architecture": "unknown",
+            "parameters": meta.get("parameters", "unknown"),
+            "quantization": meta.get("quantization", "unknown"),
+            "base_url": meta.get("base_url"),
+            "max_context_window": int(meta.get("max_context_window") or 8192),
         }
         return current_models + [model]
 
@@ -446,28 +482,27 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
             return current_models[:idx] + current_models[idx + 1:]
         return current_models
 
-    # Set evaluator
+    # Set evaluator (simplified — reads from eval meta store)
     @app.callback(
         Output("runctl-evaluator-store", "data"),
         Output("runctl-evaluator-display", "children"),
         Input("runctl-set-eval-btn", "n_clicks"),
-        State("runctl-eval-backend", "value"),
-        State("runctl-eval-model-name", "value"),
-        State("runctl-eval-base-url", "value"),
+        State("runctl-eval-meta-store", "data"),
         prevent_initial_call=True,
     )
-    def set_evaluator(n_clicks, backend, model_name, base_url):
-        if not backend or not model_name:
-            return [], html.Span("Evaluator cleared.", style={"color": TEXT_MUTED, "fontSize": "13px"})
+    def set_evaluator(n_clicks, eval_meta):
+        if not eval_meta:
+            return [], html.Span("Select a server first.", style={"color": TEXT_MUTED, "fontSize": "13px"})
 
+        model_name = eval_meta.get("model_name", "unknown")
         evaluator = [{
             "name": model_name,
-            "backend": backend,
+            "backend": "llamacpp",
             "model_name": model_name,
-            "base_url": base_url or None,
+            "base_url": eval_meta.get("base_url"),
         }]
         display = html.Span(
-            f"Evaluator: {model_name} ({backend})",
+            f"Evaluator: {model_name} (llamacpp)",
             style={"color": WONG["purple"], "fontWeight": "600", "fontSize": "13px"},
         )
         return evaluator, display
@@ -519,6 +554,36 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         elif tid == "runctl-pos-dense":
             return ", ".join(str(p) for p in POSITIONS_DENSE)
         return no_update
+
+    # Update context length options based on model constraints
+    @app.callback(
+        Output("runctl-ctx-lengths", "options"),
+        Output("runctl-ctx-lengths", "value"),
+        Output("runctl-ctx-limit-note", "children"),
+        Input("runctl-models-store", "data"),
+        State("runctl-ctx-lengths", "value"),
+    )
+    def update_ctx_options(models, current_values):
+        current_values = current_values or []
+        if not models:
+            return (
+                [{"label": f" {cl:,}", "value": cl} for cl in COMMON_CTX_LENGTHS],
+                current_values,
+                "",
+            )
+        max_ctx = min(m.get("max_context_window", 999999) for m in models)
+        options = []
+        for cl in COMMON_CTX_LENGTHS:
+            opt = {"label": f" {cl:,}", "value": cl}
+            if cl > max_ctx:
+                opt["disabled"] = True
+            options.append(opt)
+        valid_values = [v for v in current_values if v <= max_ctx]
+        note = html.Span(
+            f"Max context: {max_ctx:,} tokens (from server config)",
+            style={"color": WONG["orange"], "fontSize": "12px", "fontWeight": "600"},
+        )
+        return options, valid_values, note
 
     # Work estimate
     @app.callback(
@@ -616,6 +681,16 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
                         ctx_lengths.append(val)
         if not ctx_lengths:
             return html.Span("Select at least one context length.", style={"color": WONG["orange"]})
+
+        # Validate context lengths against model server capacity
+        if models:
+            max_ctx = min(m.get("max_context_window", 999999) for m in models)
+            over = [cl for cl in ctx_lengths if cl > max_ctx]
+            if over:
+                return html.Span(
+                    f"Context length(s) {', '.join(str(c) for c in over)} exceed server capacity ({max_ctx:,} tokens).",
+                    style={"color": WONG["orange"]},
+                )
 
         # Build probe_select
         probe_select = "all"

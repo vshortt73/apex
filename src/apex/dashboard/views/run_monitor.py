@@ -26,6 +26,9 @@ def layout() -> html.Div:
         # 10-second refresh for this tab
         dcc.Interval(id="monitor-interval", interval=10_000, n_intervals=0),
 
+        # System status bar (GPU / VRAM / CPU / RAM)
+        html.Div(id="monitor-system-bar"),
+
         # Progress cards
         html.Div(id="monitor-progress-cards"),
 
@@ -44,6 +47,117 @@ def layout() -> html.Div:
 
 
 def register_callbacks(app, qm):
+    @app.callback(
+        Output("monitor-system-bar", "children"),
+        Input("monitor-interval", "n_intervals"),
+    )
+    def update_system_bar(_n):
+        from apex.dashboard.services.infra import get_gpu_stats, get_system_stats
+
+        gpu = get_gpu_stats()
+        sys = get_system_stats()
+
+        def _temp_color(temp_c: int | None) -> str:
+            if temp_c is None:
+                return TEXT_MUTED
+            if temp_c < 70:
+                return WONG["green"]
+            if temp_c < 85:
+                return WONG["orange"]
+            return WONG["vermillion"]
+
+        def _usage_color(pct: float) -> str:
+            if pct < 70:
+                return WONG["green"]
+            if pct < 90:
+                return WONG["orange"]
+            return WONG["vermillion"]
+
+        def _mini_bar(pct: float, color: str) -> html.Div:
+            return html.Div([
+                html.Div(style={
+                    "width": f"{min(pct, 100):.0f}%", "height": "100%",
+                    "backgroundColor": color, "borderRadius": "3px",
+                }),
+            ], style={
+                "height": "8px", "width": "80px", "backgroundColor": BG_PLOT,
+                "borderRadius": "3px", "display": "inline-block", "verticalAlign": "middle",
+            })
+
+        _sep = {"borderLeft": f"1px solid {BORDER_COLOR}", "height": "28px", "margin": "0 16px"}
+        items = []
+
+        # GPU section
+        if gpu:
+            items.extend([
+                html.Span(gpu.name, style={"fontWeight": "700", "fontSize": "13px", "marginRight": "8px"}),
+                html.Span(
+                    f"{gpu.utilization_pct}%",
+                    style={"fontSize": "13px", "marginRight": "6px"},
+                ),
+                html.Span(
+                    f"{gpu.temperature_c}\u00b0C",
+                    style={"color": _temp_color(gpu.temperature_c), "fontSize": "13px"},
+                ),
+                html.Div(style=_sep),
+                # VRAM
+                html.Span("VRAM ", style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginRight": "6px"}),
+            ])
+            vram_pct = gpu.vram_used_mb / max(gpu.vram_total_mb, 1) * 100
+            vram_gb_used = gpu.vram_used_mb / 1024
+            vram_gb_total = gpu.vram_total_mb / 1024
+            items.extend([
+                _mini_bar(vram_pct, _usage_color(vram_pct)),
+                html.Span(
+                    f" {vram_gb_used:.1f} / {vram_gb_total:.1f} GB",
+                    style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginLeft": "6px"},
+                ),
+                html.Div(style=_sep),
+            ])
+        else:
+            items.extend([
+                html.Span("GPU ", style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginRight": "4px"}),
+                html.Span("N/A", style={"fontSize": "13px", "color": TEXT_MUTED}),
+                html.Div(style=_sep),
+            ])
+
+        # CPU temp
+        items.append(html.Span("CPU ", style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginRight": "4px"}))
+        if sys.cpu_temp_c is not None:
+            items.append(html.Span(
+                f"{sys.cpu_temp_c}\u00b0C",
+                style={"fontSize": "13px", "color": _temp_color(sys.cpu_temp_c)},
+            ))
+        else:
+            items.append(html.Span("N/A", style={"fontSize": "13px", "color": TEXT_MUTED}))
+
+        items.append(html.Div(style=_sep))
+
+        # RAM
+        items.append(html.Span("RAM ", style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginRight": "6px"}))
+        if sys.ram_total_gb > 0:
+            ram_pct = sys.ram_used_gb / sys.ram_total_gb * 100
+            items.extend([
+                _mini_bar(ram_pct, _usage_color(ram_pct)),
+                html.Span(
+                    f" {sys.ram_used_gb:.1f} / {sys.ram_total_gb:.1f} GB",
+                    style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginLeft": "6px"},
+                ),
+            ])
+        else:
+            items.append(html.Span("N/A", style={"fontSize": "13px", "color": TEXT_MUTED}))
+
+        return html.Div(
+            items,
+            style={
+                **CARD_STYLE,
+                "display": "flex",
+                "alignItems": "center",
+                "padding": "10px 20px",
+                "marginBottom": "16px",
+            },
+        )
+
     @app.callback(
         Output("monitor-progress-cards", "children"),
         Input("monitor-interval", "n_intervals"),

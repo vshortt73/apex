@@ -1,4 +1,4 @@
-"""APEX Dashboard — interactive visualization of probe results."""
+"""APEX Console — interactive visualization of probe results."""
 
 from __future__ import annotations
 
