@@ -208,9 +208,9 @@ def register_callbacks(app, qm):
                     if estimated > completed:
                         remaining = (estimated - completed) / rate
                         if remaining < 60:
-                            rate_text += f" | ETA: {remaining:.0f}m"
+                            rate_text += f" | ETE: {remaining:.0f}m"
                         else:
-                            rate_text += f" | ETA: {remaining / 60:.1f}h"
+                            rate_text += f" | ETE: {remaining / 60:.1f}h"
             except Exception:
                 pass
 
