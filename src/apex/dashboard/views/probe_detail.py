@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, no_update
 import plotly.graph_objects as go
 import pandas as pd
 
@@ -95,12 +95,15 @@ def register_callbacks(app, qm):
         Output("probe-model", "options"),
         Output("probe-model", "value"),
         Input("refresh-interval", "n_intervals"),
+        State("probe-model", "value"),
     )
-    def update_models(_n):
+    def update_models(_n, current):
         models = qm.get_models()
         opts = [{"label": m["model_id"], "value": m["model_id"]} for m in models]
-        value = opts[0]["value"] if opts else None
-        return opts, value
+        ids = {m["model_id"] for m in models}
+        if current and current in ids:
+            return opts, no_update
+        return opts, (opts[0]["value"] if opts else None)
 
     @app.callback(
         Output("probe-context-length", "options"),

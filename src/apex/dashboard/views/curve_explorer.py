@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dash import html, dcc, Input, Output
+from dash import html, dcc, Input, Output, State, no_update
 import plotly.graph_objects as go
 
 from apex.dashboard.styles import (
@@ -81,17 +81,20 @@ def layout() -> html.Div:
 
 
 def register_callbacks(app, qm):
-    # Populate model dropdown
+    # Populate model dropdown (preserve user selection across refreshes)
     @app.callback(
         Output("curve-model", "options"),
         Output("curve-model", "value"),
         Input("refresh-interval", "n_intervals"),
+        State("curve-model", "value"),
     )
-    def update_models(_n):
+    def update_models(_n, current):
         models = qm.get_models()
         opts = [{"label": m["model_id"], "value": m["model_id"]} for m in models]
-        value = opts[0]["value"] if opts else None
-        return opts, value
+        ids = {m["model_id"] for m in models}
+        if current and current in ids:
+            return opts, no_update
+        return opts, (opts[0]["value"] if opts else None)
 
     # Cascade: model → context lengths
     @app.callback(

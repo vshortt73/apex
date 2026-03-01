@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dash import html, dcc, Input, Output
+from dash import html, dcc, Input, Output, State, no_update
 import plotly.graph_objects as go
 
 from apex.dashboard.styles import (
@@ -67,12 +67,15 @@ def register_callbacks(app, qm):
         Output("xmodel-models", "options"),
         Output("xmodel-models", "value"),
         Input("refresh-interval", "n_intervals"),
+        State("xmodel-models", "value"),
     )
-    def update_models(_n):
+    def update_models(_n, current):
         models = qm.get_models()
         opts = [{"label": m["model_id"], "value": m["model_id"]} for m in models]
-        values = [m["model_id"] for m in models]
-        return opts, values
+        ids = {m["model_id"] for m in models}
+        if current and all(v in ids for v in current):
+            return opts, no_update
+        return opts, [m["model_id"] for m in models]
 
     @app.callback(
         Output("xmodel-dimension", "options"),
