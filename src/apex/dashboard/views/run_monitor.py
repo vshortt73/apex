@@ -455,6 +455,7 @@ def register_callbacks(app, qm):
                 error_items.append(html.Div([
                     html.Div([
                         html.Span(label, style={"color": label_color, "fontWeight": "600", "fontSize": "11px", "marginRight": "8px"}),
+                        html.Span(r["model_id"], style={"fontSize": "11px", "fontWeight": "600", "marginRight": "8px"}),
                         html.Span(r["probe_id"], style={"fontSize": "11px", "color": TEXT_SECONDARY}),
                     ], style={"marginBottom": "4px"}),
                     html.Div(
