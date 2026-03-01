@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
 from datetime import datetime, timezone
 
 from tqdm import tqdm
@@ -61,6 +62,7 @@ class ProbeRunner:
 
     def run(self) -> None:
         """Execute the full probe run."""
+        self._run_uuid = str(uuid.uuid4())
         probes = self._select_probes()
         if not probes:
             logger.error("No probes selected — check config and library")
@@ -258,6 +260,7 @@ class ProbeRunner:
             library_version=self.library.library_version,
             framework_version=__version__,
             refused=refused,
+            run_uuid=self._run_uuid,
         )
         self.store.write_result(result)
 

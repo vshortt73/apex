@@ -24,8 +24,21 @@ class QueryManager:
             import psycopg
 
             self._pg_conn = psycopg.connect(self._dsn)
+            self._ensure_schema()
         else:
             self._db_path = str(Path(self._dsn).resolve())
+            self._ensure_schema()
+
+    def _ensure_schema(self) -> None:
+        """Ensure the database schema is up-to-date (adds missing columns)."""
+        from apex.db import get_backend
+
+        try:
+            backend = get_backend(self._dsn)
+            backend.create_schema()
+            backend.close()
+        except Exception:
+            pass  # Best-effort; read-only queries will still work for existing columns
 
     def _connect(self):
         if self._is_postgres:
@@ -44,11 +57,15 @@ class QueryManager:
         raw DB-API connections).
         """
         if self._is_postgres:
-            with conn.cursor() as cur:
-                cur.execute(sql, params or ())
-                cols = [desc[0] for desc in cur.description]
-                data = cur.fetchall()
-            return pd.DataFrame(data, columns=cols)
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(sql, params or ())
+                    cols = [desc[0] for desc in cur.description]
+                    data = cur.fetchall()
+                return pd.DataFrame(data, columns=cols)
+            except Exception:
+                conn.rollback()
+                raise
         return pd.read_sql_query(sql, conn, params=params)
 
     def close(self) -> None:
@@ -378,6 +395,84 @@ class QueryManager:
             )
         finally:
             self._release(conn)
+
+    # ------------------------------------------------------------------
+    # Run UUID management
+    # ------------------------------------------------------------------
+
+    def get_run_uuids(self) -> pd.DataFrame:
+        """Distinct run UUIDs with model, count, timestamp range."""
+        conn = self._connect()
+        try:
+            return self._query_df(
+                """SELECT run_uuid, model_id, COUNT(*) AS count,
+                          MIN(timestamp) AS first_ts, MAX(timestamp) AS last_ts
+                   FROM probe_results
+                   WHERE run_uuid IS NOT NULL
+                   GROUP BY run_uuid, model_id
+                   ORDER BY last_ts DESC""",
+                conn,
+            )
+        except Exception:
+            # Column may not exist yet in databases that haven't been migrated
+            return pd.DataFrame(columns=["run_uuid", "model_id", "count", "first_ts", "last_ts"])
+        finally:
+            self._release(conn)
+
+    def delete_by_run_uuid(self, run_uuid: str) -> int:
+        """Delete all results for a run UUID. Returns row count."""
+        if self._is_postgres:
+            try:
+                with self._pg_conn.cursor() as cur:
+                    cur.execute(
+                        "DELETE FROM probe_results WHERE run_uuid = %s",
+                        (run_uuid,),
+                    )
+                    count = cur.rowcount
+                self._pg_conn.commit()
+                return count
+            except Exception:
+                self._pg_conn.rollback()
+                raise
+        else:
+            # Open a writable connection for SQLite
+            conn = sqlite3.connect(self._db_path)
+            try:
+                cursor = conn.execute(
+                    "DELETE FROM probe_results WHERE run_uuid = ?",
+                    (run_uuid,),
+                )
+                conn.commit()
+                return cursor.rowcount
+            finally:
+                conn.close()
+
+    def delete_by_model(self, model_id: str) -> int:
+        """Delete all results for a model. Returns row count."""
+        if self._is_postgres:
+            try:
+                with self._pg_conn.cursor() as cur:
+                    cur.execute(
+                        "DELETE FROM probe_results WHERE model_id = %s",
+                        (model_id,),
+                    )
+                    count = cur.rowcount
+                self._pg_conn.commit()
+                return count
+            except Exception:
+                self._pg_conn.rollback()
+                raise
+        else:
+            conn = sqlite3.connect(self._db_path)
+            try:
+                cursor = conn.execute(
+                    "DELETE FROM probe_results WHERE model_id = ?",
+                    (model_id,),
+                )
+                conn.commit()
+                return cursor.rowcount
+            finally:
+                conn.close()
 
     # ------------------------------------------------------------------
     # Aggregation (in pandas, not SQL)

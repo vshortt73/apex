@@ -207,6 +207,101 @@ def cmd_rescore(args: argparse.Namespace) -> None:
     store.close()
 
 
+def cmd_delete(args: argparse.Namespace) -> None:
+    from apex.storage import ResultStore
+
+    dsn = _resolve_dsn(args.db)
+    store = ResultStore(dsn)
+
+    # --list-runs: show available run UUIDs and exit
+    if args.list_runs:
+        runs = store.get_run_uuids()
+        if not runs:
+            print("No run UUIDs found in database.")
+        else:
+            print(f"{'Run UUID':<38} {'Model':<40} {'Count':>6}  {'First':>24}  {'Last':>24}")
+            print("-" * 140)
+            for r in runs:
+                print(
+                    f"{r['run_uuid']:<38} {r['model_id']:<40} {r['count']:>6}  "
+                    f"{r['first_ts']:>24}  {r['last_ts']:>24}"
+                )
+        store.close()
+        return
+
+    # Determine deletion mode
+    if args.run_uuid:
+        label = f"run_uuid={args.run_uuid}"
+        count_sql_fn = lambda: len(store.query_results())  # noqa: E731
+        # Preview count via a query
+        cursor = store._conn.execute(
+            f"SELECT COUNT(*) FROM probe_results WHERE run_uuid = {store._ph}",
+            (args.run_uuid,),
+        )
+        count = cursor.fetchone()[0]
+        delete_fn = lambda: store.delete_by_run_uuid(args.run_uuid)  # noqa: E731
+    elif args.model:
+        filters: dict = {"model_id": args.model}
+        if args.dimension:
+            filters["dimension"] = args.dimension
+        if args.probe_id:
+            filters["probe_id"] = args.probe_id
+        if args.context_length:
+            filters["context_length"] = args.context_length
+
+        parts = [f"model={args.model}"]
+        if args.dimension:
+            parts.append(f"dimension={args.dimension}")
+        if args.probe_id:
+            parts.append(f"probe_id={args.probe_id}")
+        if args.context_length:
+            parts.append(f"context_length={args.context_length}")
+        label = ", ".join(parts)
+
+        # Preview count
+        conditions = []
+        params: list = []
+        for key, val in filters.items():
+            conditions.append(f"{key} = {store._ph}")
+            params.append(val)
+        where = " WHERE " + " AND ".join(conditions)
+        cursor = store._conn.execute(
+            f"SELECT COUNT(*) FROM probe_results{where}", params
+        )
+        count = cursor.fetchone()[0]
+
+        if len(filters) == 1 and "model_id" in filters:
+            delete_fn = lambda: store.delete_by_model(args.model)  # noqa: E731
+        else:
+            delete_fn = lambda: store.delete_by_filters(**filters)  # noqa: E731
+    else:
+        print("Error: specify --run-uuid or --model to select results to delete.", file=sys.stderr)
+        store.close()
+        sys.exit(1)
+
+    if count == 0:
+        print(f"No results found matching {label}.")
+        store.close()
+        return
+
+    if args.dry_run:
+        print(f"Dry run: {count} result(s) would be deleted ({label}).")
+        store.close()
+        return
+
+    # Confirm
+    if not args.yes:
+        answer = input(f"Delete {count} result(s) matching {label}? [y/N] ")
+        if answer.strip().lower() not in ("y", "yes"):
+            print("Aborted.")
+            store.close()
+            return
+
+    deleted = delete_fn()
+    print(f"Deleted {deleted} result(s) ({label}).")
+    store.close()
+
+
 def cmd_migrate(args: argparse.Namespace) -> None:
     from apex.migrate import migrate
 
@@ -323,6 +418,19 @@ def main(argv: list[str] | None = None) -> None:
     )
     p_rescore.add_argument("--null-only", action="store_true", help="Only rescore results where score IS NULL")
     p_rescore.set_defaults(func=cmd_rescore)
+
+    # delete
+    p_delete = subparsers.add_parser("delete", help="Delete results from database")
+    p_delete.add_argument("db", help="Path to results database or PostgreSQL DSN")
+    p_delete.add_argument("--run-uuid", help="Delete all results from a specific run UUID")
+    p_delete.add_argument("--model", help="Delete all results for a model")
+    p_delete.add_argument("--dimension", help="Narrow deletion to a dimension (use with --model)")
+    p_delete.add_argument("--probe-id", help="Narrow deletion to a specific probe")
+    p_delete.add_argument("--context-length", type=int, help="Narrow deletion to a specific context length")
+    p_delete.add_argument("--dry-run", action="store_true", help="Preview count without deleting")
+    p_delete.add_argument("--list-runs", action="store_true", help="List distinct run UUIDs with summary info")
+    p_delete.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt")
+    p_delete.set_defaults(func=cmd_delete)
 
     # migrate
     p_migrate = subparsers.add_parser("migrate", help="Migrate SQLite results to PostgreSQL")

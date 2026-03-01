@@ -135,3 +135,4 @@ class ProbeResult:
     library_version: str = "1.0"
     framework_version: str = "1.0.0"
     refused: bool = False
+    run_uuid: str | None = None

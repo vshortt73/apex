@@ -39,6 +39,7 @@ _COLUMNS = [
     ("library_version", "TEXT NOT NULL"),
     ("framework_version", "TEXT NOT NULL"),
     ("refused", "INTEGER NOT NULL DEFAULT 0"),
+    ("run_uuid", "TEXT"),
 ]
 
 COLUMN_NAMES = [name for name, _ in _COLUMNS]
@@ -74,6 +75,10 @@ class DatabaseBackend(ABC):
         """Return the full upsert SQL for probe_results."""
         ...
 
+    def ensure_columns(self) -> None:
+        """Add any missing columns to an existing table (safe schema migration)."""
+        ...
+
     @abstractmethod
     def close(self) -> None:
         """Close the connection."""
@@ -103,19 +108,35 @@ class SqliteBackend(DatabaseBackend):
             for name, typedef in _COLUMNS
         )
         unique = ", ".join(UNIQUE_KEY)
-        self._conn.executescript(f"""
+        self._conn.execute(f"""
 CREATE TABLE IF NOT EXISTS probe_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     {col_defs},
     UNIQUE({unique})
-);
-
+)""")
+        self._conn.commit()
+        self.ensure_columns()
+        self._conn.executescript("""
 CREATE INDEX IF NOT EXISTS idx_model_probe
     ON probe_results(model_id, probe_id, target_position_percent, context_length);
 
 CREATE INDEX IF NOT EXISTS idx_model_dimension
     ON probe_results(model_id, dimension, context_length);
+
+CREATE INDEX IF NOT EXISTS idx_run_uuid
+    ON probe_results(run_uuid);
 """)
+        self._conn.commit()
+
+    def ensure_columns(self) -> None:
+        cursor = self._conn.execute("PRAGMA table_info(probe_results)")
+        existing = {row[1] for row in cursor.fetchall()}
+        for name, typedef in _COLUMNS:
+            if name not in existing:
+                col_type = typedef.replace("{float}", "REAL")
+                self._conn.execute(
+                    f"ALTER TABLE probe_results ADD COLUMN {name} {col_type}"
+                )
         self._conn.commit()
 
     def upsert_sql(self) -> str:
@@ -156,12 +177,34 @@ CREATE TABLE IF NOT EXISTS probe_results (
     {col_defs},
     UNIQUE({unique})
 )""")
+        self._conn.commit()
+        self.ensure_columns()
+        with self._conn.cursor() as cur:
             cur.execute("""
 CREATE INDEX IF NOT EXISTS idx_model_probe
     ON probe_results(model_id, probe_id, target_position_percent, context_length)""")
             cur.execute("""
 CREATE INDEX IF NOT EXISTS idx_model_dimension
     ON probe_results(model_id, dimension, context_length)""")
+            cur.execute("""
+CREATE INDEX IF NOT EXISTS idx_run_uuid
+    ON probe_results(run_uuid)""")
+        self._conn.commit()
+
+    def ensure_columns(self) -> None:
+        with self._conn.cursor() as cur:
+            cur.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'probe_results'"
+            )
+            existing = {row[0] for row in cur.fetchall()}
+        for name, typedef in _COLUMNS:
+            if name not in existing:
+                col_type = typedef.replace("{float}", "DOUBLE PRECISION")
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        f"ALTER TABLE probe_results ADD COLUMN {name} {col_type}"
+                    )
         self._conn.commit()
 
     def upsert_sql(self) -> str:

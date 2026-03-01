@@ -57,6 +57,7 @@ class ResultStore:
                 result.library_version,
                 result.framework_version,
                 1 if result.refused else 0,
+                result.run_uuid,
             ),
         )
         self._conn.commit()
@@ -143,6 +144,70 @@ class ResultStore:
                 (score, justification, row_id),
             )
         self._conn.commit()
+
+    def delete_by_run_uuid(self, run_uuid: str) -> int:
+        """Delete all results from a specific run UUID. Returns row count."""
+        cursor = self._conn.execute(
+            f"DELETE FROM probe_results WHERE run_uuid = {self._ph}",
+            (run_uuid,),
+        )
+        self._conn.commit()
+        return cursor.rowcount
+
+    def delete_by_model(self, model_id: str) -> int:
+        """Delete all results for a model. Returns row count."""
+        cursor = self._conn.execute(
+            f"DELETE FROM probe_results WHERE model_id = {self._ph}",
+            (model_id,),
+        )
+        self._conn.commit()
+        return cursor.rowcount
+
+    def delete_by_filters(
+        self,
+        model_id: str | None = None,
+        dimension: str | None = None,
+        probe_id: str | None = None,
+        context_length: int | None = None,
+    ) -> int:
+        """Delete results matching optional filters. Returns row count."""
+        conditions = []
+        params: list = []
+        if model_id:
+            conditions.append(f"model_id = {self._ph}")
+            params.append(model_id)
+        if dimension:
+            conditions.append(f"dimension = {self._ph}")
+            params.append(dimension)
+        if probe_id:
+            conditions.append(f"probe_id = {self._ph}")
+            params.append(probe_id)
+        if context_length is not None:
+            conditions.append(f"context_length = {self._ph}")
+            params.append(context_length)
+
+        if not conditions:
+            return 0
+
+        where = " WHERE " + " AND ".join(conditions)
+        cursor = self._conn.execute(
+            f"DELETE FROM probe_results{where}", params
+        )
+        self._conn.commit()
+        return cursor.rowcount
+
+    def get_run_uuids(self) -> list[dict]:
+        """Return distinct run UUIDs with model_id, count, and timestamp range."""
+        cursor = self._conn.execute(
+            "SELECT run_uuid, model_id, COUNT(*) AS count,"
+            " MIN(timestamp) AS first_ts, MAX(timestamp) AS last_ts"
+            " FROM probe_results"
+            " WHERE run_uuid IS NOT NULL"
+            " GROUP BY run_uuid, model_id"
+            " ORDER BY last_ts DESC"
+        )
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
     def close(self) -> None:
         self._backend.close()

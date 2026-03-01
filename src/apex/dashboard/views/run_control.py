@@ -282,6 +282,47 @@ def layout(dashboard_config=None) -> html.Div:
         # === Active Runs ===
         html.Div(id="runctl-active-runs"),
 
+        # === Delete Results ===
+        html.Div([
+            html.H4("Delete Results", style={"marginTop": "0", "marginBottom": "12px"}),
+            html.P(
+                "Remove results by run UUID or model. Use this to clean up bad runs.",
+                style={"fontSize": "12px", "color": TEXT_MUTED, "marginBottom": "12px"},
+            ),
+
+            # Delete by run UUID
+            html.Label("Delete by Run UUID", style=LABEL_STYLE),
+            html.Div([
+                dcc.Dropdown(
+                    id="runctl-delete-uuid",
+                    placeholder="Select a run UUID...",
+                    style={"flex": "3", "minWidth": "300px"},
+                ),
+                html.Button(
+                    "Delete Selected Run", id="runctl-delete-uuid-btn", n_clicks=0,
+                    style={**_BTN_STYLE, "backgroundColor": WONG["vermillion"], "color": "#fff"},
+                ),
+            ], style={"display": "flex", "gap": "12px", "alignItems": "center", "marginBottom": "16px"}),
+
+            # Delete by model
+            html.Label("Delete by Model", style=LABEL_STYLE),
+            html.Div([
+                dcc.Dropdown(
+                    id="runctl-delete-model",
+                    placeholder="Select a model...",
+                    style={"flex": "3", "minWidth": "300px"},
+                ),
+                html.Button(
+                    "Delete Model Results", id="runctl-delete-model-btn", n_clicks=0,
+                    style={**_BTN_STYLE, "backgroundColor": WONG["vermillion"], "color": "#fff"},
+                ),
+            ], style={"display": "flex", "gap": "12px", "alignItems": "center", "marginBottom": "12px"}),
+
+            # Confirmation store + feedback
+            dcc.Store(id="runctl-delete-confirm-store", data=None),
+            html.Div(id="runctl-delete-feedback", style={"marginTop": "12px"}),
+        ], style=CARD_STYLE),
+
         # === Rescore ===
         html.Div([
             html.H4("Rescore NULL Results", style={"marginTop": "0", "marginBottom": "12px"}),
@@ -836,6 +877,79 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
             f"Rescore launched: {run_id} (PID {info.pid})",
             style={"color": WONG["green"], "fontWeight": "600"},
         )
+
+    # Populate delete-by-UUID dropdown
+    @app.callback(
+        Output("runctl-delete-uuid", "options"),
+        Input("runctl-interval", "n_intervals"),
+    )
+    def populate_delete_uuids(_n):
+        try:
+            df = qm.get_run_uuids()
+            if df.empty:
+                return []
+            return [
+                {
+                    "label": f"{row['run_uuid'][:8]}... | {row['model_id']} ({row['count']} results)",
+                    "value": row["run_uuid"],
+                }
+                for _, row in df.iterrows()
+            ]
+        except Exception:
+            return []
+
+    # Populate delete-by-model dropdown
+    @app.callback(
+        Output("runctl-delete-model", "options"),
+        Input("runctl-interval", "n_intervals"),
+    )
+    def populate_delete_models(_n):
+        try:
+            models = qm.get_models()
+            return [
+                {"label": m["model_id"], "value": m["model_id"]}
+                for m in models
+            ]
+        except Exception:
+            return []
+
+    # Delete by UUID
+    @app.callback(
+        Output("runctl-delete-feedback", "children"),
+        Input("runctl-delete-uuid-btn", "n_clicks"),
+        State("runctl-delete-uuid", "value"),
+        prevent_initial_call=True,
+    )
+    def delete_by_uuid(n_clicks, run_uuid):
+        if not run_uuid:
+            return html.Span("Select a run UUID first.", style={"color": WONG["orange"]})
+        try:
+            count = qm.delete_by_run_uuid(run_uuid)
+            return html.Span(
+                f"Deleted {count} result(s) for run {run_uuid[:8]}...",
+                style={"color": WONG["green"], "fontWeight": "600"},
+            )
+        except Exception as e:
+            return html.Span(f"Delete failed: {e}", style={"color": WONG["vermillion"]})
+
+    # Delete by model
+    @app.callback(
+        Output("runctl-delete-feedback", "children", allow_duplicate=True),
+        Input("runctl-delete-model-btn", "n_clicks"),
+        State("runctl-delete-model", "value"),
+        prevent_initial_call=True,
+    )
+    def delete_by_model(n_clicks, model_id):
+        if not model_id:
+            return html.Span("Select a model first.", style={"color": WONG["orange"]})
+        try:
+            count = qm.delete_by_model(model_id)
+            return html.Span(
+                f"Deleted {count} result(s) for model {model_id}.",
+                style={"color": WONG["green"], "fontWeight": "600"},
+            )
+        except Exception as e:
+            return html.Span(f"Delete failed: {e}", style={"color": WONG["vermillion"]})
 
     # Sync form defaults when settings are saved
     @app.callback(

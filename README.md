@@ -199,6 +199,7 @@ python -m apex run <config.yaml>        # Execute a probe run
 python -m apex validate <config.yaml>   # Validate config without running
 python -m apex status <db>              # Show run progress and statistics
 python -m apex export <db> -o out.json  # Export results to JSON
+python -m apex delete <db> [filters]    # Delete results (see below)
 python -m apex rescore <db>             # Rescore existing results (see below)
 python -m apex dashboard [db]           # Launch interactive dashboard
 python -m apex migrate <sqlite_file>    # Migrate SQLite results to PostgreSQL
@@ -236,6 +237,44 @@ python -m apex rescore results.db --model my-model --score-method evaluator --nu
 | `--model` | Filter results by model_id |
 | `--score-method` | Which methods to rescore: `all`, `evaluator`, `programmatic`, `exact_match` |
 | `--null-only` | Only rescore results where score IS NULL |
+
+### Delete
+
+Remove results from the database by run UUID, model, or filtered criteria. Every run now generates a UUID that tags all results produced by that execution, making it easy to surgically remove a bad run.
+
+```bash
+# List all run UUIDs with model and count
+python -m apex delete results.db --list-runs
+
+# Delete all results from a specific run
+python -m apex delete results.db --run-uuid <uuid>
+
+# Delete all results for a model
+python -m apex delete results.db --model my-model
+
+# Delete with combined filters
+python -m apex delete results.db --model my-model --dimension factual_recall
+python -m apex delete results.db --model my-model --probe-id F-001 --context-length 4096
+
+# Preview what would be deleted
+python -m apex delete results.db --model my-model --dry-run
+
+# Skip confirmation prompt
+python -m apex delete results.db --run-uuid <uuid> -y
+```
+
+| Flag | Description |
+|------|-------------|
+| `--list-runs` | Show all run UUIDs with model, count, and timestamp range |
+| `--run-uuid` | Delete all results from a specific run execution |
+| `--model` | Delete all results for a model |
+| `--dimension` | Narrow deletion to a dimension (use with `--model`) |
+| `--probe-id` | Narrow deletion to a specific probe |
+| `--context-length` | Narrow deletion to a specific context length |
+| `--dry-run` | Preview count without deleting |
+| `-y`, `--yes` | Skip confirmation prompt |
+
+Deletion is also available from the dashboard's Run Control tab via the "Delete Results" card.
 
 ## Configuration
 
@@ -281,7 +320,7 @@ APEX supports both SQLite and PostgreSQL:
 
 Results are written incrementally as each probe completes. Runs can be safely interrupted and resumed — the runner queries completed tuples and skips them automatically.
 
-The unique constraint on `(model_id, probe_id, target_position_percent, context_length, run_number)` prevents duplicate results and enables resume.
+The unique constraint on `(model_id, probe_id, target_position_percent, context_length, run_number)` prevents duplicate results and enables resume. Each run execution is tagged with a UUID (`run_uuid`) for tracking and selective deletion.
 
 ## Resume and Interruption
 
@@ -297,7 +336,7 @@ APEX is designed for long overnight runs. If interrupted:
 python -m pytest tests/ -v
 ```
 
-86 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, rescore, dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
+95 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, rescore, delete operations, dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
 
 ## Design Principles
 
@@ -311,4 +350,4 @@ python -m pytest tests/ -v
 
 ## Project
 
-APEX v1.0.0 — ~8,000 lines of Python across 46 source files, 86 tests, 10-tab interactive dashboard.
+APEX v1.0.0 — ~8,500 lines of Python across 47 source files, 95 tests, 10-tab interactive dashboard.
