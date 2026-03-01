@@ -360,6 +360,7 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         per_slot_ctx = slots[0].get("n_ctx", 0) if slots else 0
         display_name = model_id.replace(".gguf", "")
 
+        n_slots = len(slots) if slots else 1
         meta = {
             "model_id": model_id,
             "model_name": model_id,
@@ -367,11 +368,13 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
             "quantization": quant_str,
             "max_context_window": per_slot_ctx,
             "base_url": base_url,
+            "n_slots": n_slots,
         }
 
         ctx_label = f"{per_slot_ctx:,} ctx/slot" if per_slot_ctx else "unknown ctx"
+        slots_label = f"{n_slots} slot{'s' if n_slots != 1 else ''}"
         info = html.Span(
-            f"{model_id} | {params_str} | {quant_str} | {ctx_label}",
+            f"{model_id} | {params_str} | {quant_str} | {ctx_label} | {slots_label}",
             style={"color": WONG["blue"], "fontWeight": "600"},
         )
         return info, meta, display_name
@@ -426,6 +429,7 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
             "quantization": meta.get("quantization", "unknown"),
             "base_url": meta.get("base_url"),
             "max_context_window": int(meta.get("max_context_window") or 8192),
+            "n_slots": int(meta.get("n_slots") or 1),
         }
         return current_models + [model]
 
@@ -697,6 +701,9 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         if probe_mode == "all":
             probe_select = "all"
 
+        # Match workers to server slot count so all slots stay busy
+        workers = min(m.get("n_slots", 1) for m in models) if models else 1
+
         # Build config dict matching YAML structure
         config = {
             "run": {
@@ -704,6 +711,7 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
                 "temperature": float(temperature or 0.0),
                 "repetitions": int(repetitions or 1),
                 "filler_type": filler_type or "neutral",
+                "workers": workers,
             },
             "data": {"directory": "data"},
             "database": {"url": cfg.resolve_database_url()},
