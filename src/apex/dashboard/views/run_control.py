@@ -202,6 +202,14 @@ def layout(dashboard_config=None) -> html.Div:
                     ),
                 ], style={"flex": "1"}),
             ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}),
+            html.Div([
+                dcc.Checklist(
+                    id="runctl-calibrated",
+                    options=[{"label": " Use calibrated prompts (frozen)", "value": "calibrated"}],
+                    value=[],
+                    style={"fontSize": "13px", "marginTop": "12px"},
+                ),
+            ]),
         ], style=CARD_STYLE),
 
         # === Work Estimate + Launch ===
@@ -667,10 +675,12 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         State("runctl-temperature", "value"),
         State("runctl-repetitions", "value"),
         State("runctl-filler-type", "value"),
+        State("runctl-calibrated", "value"),
         prevent_initial_call=True,
     )
     def launch_run(n_clicks, models, evaluator_models, probe_mode, positions_str,
-                   ctx_checked, ctx_custom, seed, temperature, repetitions, filler_type):
+                   ctx_checked, ctx_custom, seed, temperature, repetitions, filler_type,
+                   calibrated_opts):
         if not models:
             return html.Span("Add at least one model first.", style={"color": WONG["orange"]})
 
@@ -707,15 +717,20 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         # Match workers to server slot count so all slots stay busy
         workers = min(m.get("n_slots", 1) for m in models) if models else 1
 
+        use_calibration = "calibrated" in (calibrated_opts or [])
+
         # Build config dict matching YAML structure
+        run_section = {
+            "seed": int(seed or 42),
+            "temperature": float(temperature or 0.0),
+            "repetitions": int(repetitions or 1),
+            "filler_type": filler_type or "neutral",
+            "workers": workers,
+        }
+        if use_calibration:
+            run_section["use_calibration"] = True
         config = {
-            "run": {
-                "seed": int(seed or 42),
-                "temperature": float(temperature or 0.0),
-                "repetitions": int(repetitions or 1),
-                "filler_type": filler_type or "neutral",
-                "workers": workers,
-            },
+            "run": run_section,
             "data": {"directory": "data"},
             "database": {"url": cfg.resolve_database_url()},
             "positions": positions,

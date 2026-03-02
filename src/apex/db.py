@@ -74,6 +74,40 @@ _LAUNCH_COLUMNS = [
 
 LAUNCH_COLUMN_NAMES = [name for name, _ in _LAUNCH_COLUMNS]
 
+# Column definitions for calibration_prompts table.
+_CALIBRATION_PROMPT_COLUMNS = [
+    ("probe_id", "TEXT NOT NULL"),
+    ("dimension", "TEXT NOT NULL"),
+    ("position_percent", "{float} NOT NULL"),
+    ("context_length", "INTEGER NOT NULL"),
+    ("seed", "BIGINT NOT NULL"),
+    ("full_text", "TEXT NOT NULL"),
+    ("actual_token_count", "INTEGER NOT NULL"),
+    ("target_position_tokens", "INTEGER NOT NULL"),
+    ("filler_ids_before", "TEXT NOT NULL"),
+    ("filler_ids_after", "TEXT NOT NULL"),
+    ("probe_hash", "TEXT NOT NULL"),
+    ("content_hash", "TEXT NOT NULL"),
+    ("generated_at", "TEXT NOT NULL"),
+]
+CALIBRATION_PROMPT_COLUMN_NAMES = [n for n, _ in _CALIBRATION_PROMPT_COLUMNS]
+
+# Column definitions for calibration_baselines table.
+_CALIBRATION_BASELINE_COLUMNS = [
+    ("probe_id", "TEXT NOT NULL"),
+    ("dimension", "TEXT NOT NULL"),
+    ("model_id", "TEXT NOT NULL"),
+    ("baseline_type", "TEXT NOT NULL"),  # "bare" or "anchored"
+    ("score", "{float}"),
+    ("score_method", "TEXT NOT NULL"),
+    ("justification", "TEXT"),
+    ("raw_response", "TEXT"),
+    ("raw_test_response", "TEXT"),
+    ("error", "TEXT"),
+    ("timestamp", "TEXT NOT NULL"),
+]
+CALIBRATION_BASELINE_COLUMN_NAMES = [n for n, _ in _CALIBRATION_BASELINE_COLUMNS]
+
 
 class DatabaseBackend(ABC):
     """Abstract database backend."""
@@ -305,6 +339,63 @@ CREATE INDEX IF NOT EXISTS idx_launch_timestamp
 
     def close(self) -> None:
         self._conn.close()
+
+
+def create_calibration_schema(backend: DatabaseBackend) -> None:
+    """Create calibration tables and indexes (SQLite or PostgreSQL)."""
+    is_sqlite = isinstance(backend, SqliteBackend)
+    float_type = "REAL" if is_sqlite else "DOUBLE PRECISION"
+    id_col = "id INTEGER PRIMARY KEY AUTOINCREMENT" if is_sqlite else "id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY"
+
+    # --- calibration_prompts ---
+    prompt_col_defs = ",\n    ".join(
+        f"{name} {typedef.replace('{float}', float_type)}"
+        for name, typedef in _CALIBRATION_PROMPT_COLUMNS
+    )
+    prompt_ddl = f"""
+CREATE TABLE IF NOT EXISTS calibration_prompts (
+    {id_col},
+    {prompt_col_defs},
+    UNIQUE(probe_id, position_percent, context_length)
+)"""
+
+    # --- calibration_baselines ---
+    baseline_col_defs = ",\n    ".join(
+        f"{name} {typedef.replace('{float}', float_type)}"
+        for name, typedef in _CALIBRATION_BASELINE_COLUMNS
+    )
+    baseline_ddl = f"""
+CREATE TABLE IF NOT EXISTS calibration_baselines (
+    {id_col},
+    {baseline_col_defs},
+    UNIQUE(probe_id, model_id, baseline_type)
+)"""
+
+    if is_sqlite:
+        conn = backend.connection
+        conn.execute(prompt_ddl)
+        conn.execute(baseline_ddl)
+        conn.executescript("""
+CREATE INDEX IF NOT EXISTS idx_cal_prompt_probe
+    ON calibration_prompts(probe_id);
+CREATE INDEX IF NOT EXISTS idx_cal_prompt_ctx
+    ON calibration_prompts(context_length);
+CREATE INDEX IF NOT EXISTS idx_cal_baseline_model
+    ON calibration_baselines(model_id);
+CREATE INDEX IF NOT EXISTS idx_cal_baseline_probe
+    ON calibration_baselines(probe_id);
+""")
+        conn.commit()
+    else:
+        conn = backend.connection
+        with conn.cursor() as cur:
+            cur.execute(prompt_ddl)
+            cur.execute(baseline_ddl)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_cal_prompt_probe ON calibration_prompts(probe_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_cal_prompt_ctx ON calibration_prompts(context_length)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_cal_baseline_model ON calibration_baselines(model_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_cal_baseline_probe ON calibration_baselines(probe_id)")
+        conn.commit()
 
 
 def get_backend(dsn_or_path: str) -> DatabaseBackend:

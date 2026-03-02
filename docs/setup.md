@@ -59,6 +59,7 @@ run:
   temperature: 0.0      # Model temperature (0.0 recommended for benchmarking)
   repetitions: 3        # Repeat each probe-position combo N times
   filler_type: neutral  # neutral | emotional
+  use_calibration: false # true = use frozen calibration prompts instead of assembling
 ```
 
 **data** — Library and output paths:
@@ -287,6 +288,196 @@ Without `--evaluator-backend` and `--evaluator-model`, only `programmatic` and `
 When rescoring evaluator results, the `evaluator_model_id` column is also updated to reflect which model actually performed the scoring.
 
 The dashboard's Run Control tab also includes a "Rescore NULL Results" card that queries for NULL evaluator-scored results and launches a rescore subprocess with one click.
+
+## Calibration
+
+APEX probes lack baseline calibration by default. A raw score of 0.3 at some position could mean the probe is hard, filler is interfering, or position is bad — there's no way to tell. The calibration subsystem decomposes this into three separable factors using a two-tier baseline.
+
+### Overview
+
+| Tier | What it measures | Command |
+|------|-----------------|---------|
+| **Bare baseline** | Probe ceiling — score with no filler, no position effects | `--type bare` |
+| **Anchored baseline** | Best-with-filler — filler present, optimal endpoint position | `--type anchored` |
+| **Full run** | Combined position + filler + probe interaction | Normal `apex run` |
+
+From these: `filler_factor = anchored / bare` (filler cost) and `position_factor = raw / anchored` (pure position effect).
+
+### Step 1: Generate frozen prompt matrix
+
+```bash
+# Default: 60 probes × 19 positions × 2 context lengths = 2,280 prompts
+python -m apex calibrate generate \
+  --db results.db \
+  --data-dir data
+
+# Custom context lengths
+python -m apex calibrate generate \
+  --db results.db \
+  --data-dir data \
+  --context-lengths 4096 8192 16384
+
+# PostgreSQL via env var
+export APEX_DATABASE_URL="postgresql://user:pass@localhost:5432/apex"
+python -m apex calibrate generate --data-dir data
+
+# Regenerate from scratch
+python -m apex calibrate generate --db results.db --data-dir data --force
+```
+
+Frozen prompts are assembled with `seed=42, run_number=1` and stored with SHA256 content hashes for integrity verification. Generation is idempotent — same inputs produce identical prompts, and upsert prevents duplicates.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--db` | `results.db` | Database path or PostgreSQL DSN |
+| `--data-dir` | `data` | Path to probe/filler/query libraries |
+| `--tokenizer` | `approximate` | Tokenizer spec for token counting |
+| `--seed` | `42` | RNG seed for filler ordering |
+| `--context-lengths` | `4096 8192` | Target context lengths |
+| `--force` | off | Delete existing prompts before generating |
+
+### Step 2: Validate frozen prompts
+
+```bash
+python -m apex calibrate validate \
+  --db results.db \
+  --data-dir data \
+  --verbose
+```
+
+Runs five checks per prompt:
+
+1. Probe content is a substring of full_text
+2. Content hash integrity (recomputed SHA256 matches stored)
+3. Probe hash freshness (warns if probe text changed since generation)
+4. Token position within 10% of context length
+5. Context length fill ratio above 85%
+
+Exits with code 1 on any failure. Run this after updating probe libraries to catch drift — if probes changed, regenerate with `--force`.
+
+### Step 3: Run bare baselines (probe alone, no filler)
+
+```bash
+# Uses first model in config
+python -m apex calibrate baseline configs/run.yaml \
+  --db results.db \
+  --type bare
+
+# Specific model
+python -m apex calibrate baseline configs/run.yaml \
+  --db results.db \
+  --type bare \
+  --model qwen2.5-7b
+
+# Specific probes only
+python -m apex calibrate baseline configs/run.yaml \
+  --db results.db \
+  --type bare \
+  --probe-ids F-001 F-002 F-003
+
+# Overwrite existing baselines
+python -m apex calibrate baseline configs/run.yaml \
+  --db results.db \
+  --type bare \
+  --force
+```
+
+Each probe is run through the standard two-turn protocol with just the probe content (no filler). This establishes ceiling scores — what each probe gets with zero competition.
+
+### Step 4: Run anchored baselines (filler present, optimal position)
+
+```bash
+python -m apex calibrate baseline configs/run.yaml \
+  --db results.db \
+  --type anchored
+```
+
+**Requires step 1 first** — frozen prompts must exist. For each probe and context length, runs both endpoint positions (0.05 and 0.95) from the frozen matrix and keeps the higher score. This represents best-case-with-filler, isolating the filler effect from position effects.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `config` | (required) | YAML config file (for model/evaluator setup) |
+| `--db` | from config | Database path or PostgreSQL DSN |
+| `--data-dir` | from config | Path to data directory |
+| `--model` | first in config | Model name from config |
+| `--type` | `bare` | `bare` (probe only) or `anchored` (filler at endpoints) |
+| `--probe-ids` | all | Specific probe IDs to baseline |
+| `--force` | off | Delete existing baselines before running |
+
+### Step 5: Run a calibrated sweep
+
+With frozen prompts and baselines in place, run the positional sweep using calibrated prompts:
+
+```bash
+# Via CLI flag
+python -m apex run run.yaml --calibrated
+
+# Or via config (set use_calibration: true in the run section)
+python -m apex run run_calibrated.yaml
+
+# Or from the dashboard: Run Control → check "Use calibrated prompts" → Launch
+```
+
+Results are stored with `filler_type = 'calibrated'` and are visible in the dashboard's Calibration tab alongside dynamic runs.
+
+### Step 6: Use the decomposition
+
+After running both baseline types and a calibrated run, the three-factor decomposition is available:
+
+```python
+from apex.calibration_store import CalibrationStore
+
+store = CalibrationStore("results.db")
+
+# Individual baselines
+bare = store.get_baseline_for_probe("F-001", "qwen2.5-7b", "bare")        # e.g. 1.0
+anchored = store.get_baseline_for_probe("F-001", "qwen2.5-7b", "anchored") # e.g. 0.85
+
+# Filler factor (convenience method)
+filler_factor = store.get_filler_factor("F-001", "qwen2.5-7b")  # 0.85 → filler costs 15%
+
+# Position factor (compute from your run data)
+position_factor = raw_score / anchored  # pure positional effect, filler removed
+```
+
+### Interpreting results
+
+- **filler_factor close to 1.0** — filler is neutral, not competing with this probe
+- **filler_factor significantly < 1.0** — filler itself degrades performance independent of position
+- **filler_factor varying by dimension** — filler may not be truly neutral for all probe types (e.g., emotionally flat filler might suppress salience scores)
+- **position_factor** — pure positional effect with filler influence factored out
+
+### Dashboard: Calibration tab
+
+The Calibration tab in the dashboard provides four visualizations:
+
+- **Status panel** — Shows frozen prompt count, per-model baseline counts, and next-step guidance
+- **Baseline bar chart** — Grouped bars showing bare, anchored, and filler_factor scores per probe, filterable by dimension
+- **Normalized curves** — Position factor (score / anchored baseline) across the context window, with CI bands and y=1.0 reference line
+- **Calibrated vs Dynamic** — Overlaid curves comparing calibrated runs (frozen prompts) against dynamic runs (assembled prompts) for a single dimension
+
+The tab degrades gracefully: if no calibration data exists, it shows setup instructions. If baselines exist but no calibrated runs, it directs the user to Run Control.
+
+### Recommended execution order
+
+```bash
+# 1. Generate frozen prompts
+python -m apex calibrate generate --db results.db --data-dir data
+
+# 2. Validate
+python -m apex calibrate validate --db results.db --data-dir data
+
+# 3. Run bare baselines
+python -m apex calibrate baseline run.yaml --db results.db --type bare
+
+# 4. Run anchored baselines
+python -m apex calibrate baseline run.yaml --db results.db --type anchored
+
+# 5. Run calibrated sweep (frozen prompts)
+python -m apex run run.yaml --calibrated
+
+# 6. Analyze — Calibration tab shows baseline decomposition and normalized curves
+```
 
 ## Resume and Interruption
 

@@ -136,3 +136,35 @@ class ProbeResult:
     framework_version: str = "1.0.0"
     refused: bool = False
     run_uuid: str | None = None
+
+
+@dataclass
+class CalibrationPrompt:
+    probe_id: str
+    dimension: str
+    position_percent: float
+    context_length: int
+    seed: int
+    full_text: str
+    actual_token_count: int
+    target_position_tokens: int
+    filler_ids_before: str  # comma-separated
+    filler_ids_after: str  # comma-separated
+    probe_hash: str  # SHA256[:16] of probe content
+    content_hash: str  # SHA256 of full assembled text
+    generated_at: str = ""
+
+
+@dataclass
+class CalibrationBaseline:
+    probe_id: str
+    dimension: str
+    model_id: str
+    baseline_type: str  # "bare" (no filler) or "anchored" (filler, pos 0.05)
+    score: float | None
+    score_method: str
+    justification: str | None = None
+    raw_response: str = ""
+    raw_test_response: str = ""
+    error: str | None = None
+    timestamp: str = ""

@@ -164,10 +164,10 @@
     {
       "probe_id": "I-007",
       "dimension": "application",
-      "content": "Explain everything as if the reader is a curious ten-year-old child. Use simple words and relatable analogies.",
+      "content": "When answering questions, respond as if the reader is a curious ten-year-old child. Use simple words and relatable analogies.",
       "content_type": "instructional",
       "instruction_type": "audience_targeting",
-      "token_count_estimate": 18,
+      "token_count_estimate": 19,
       "intrinsic_salience": {
         "factual_importance": 0.1,
         "contextual_influence": 0.8,

@@ -203,6 +203,406 @@
       "panas_positive": 0.0,
       "panas_negative": 0.0,
       "notes": "Obscure technical topic. Maximum boredom factor. Perfect filler."
+    },
+    {
+      "filler_id": "NF-021",
+      "content": "Movable type printing, developed independently in East Asia and Europe, relies on the arrangement of individual character blocks into a composing stick to form lines of text. Each type block is cast from a lead-tin-antimony alloy chosen for its low melting point, minimal shrinkage during cooling, and resistance to deformation under the repeated pressure of the printing press. After inking and pressing, the type can be disassembled, sorted back into compartmented cases, and reused for subsequent jobs. The California Job Case, a standard American type case layout introduced in the 1880s, arranged uppercase and lowercase characters in a single tray based on frequency of use rather than alphabetical order, allowing compositors to set text more quickly.",
+      "domain": "printing",
+      "token_count_estimate": 128,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Historical printing technology. Procedural and technical."
+    },
+    {
+      "filler_id": "NF-022",
+      "content": "The International Telecommunication Union assigns country calling codes under the E.164 numbering plan, which organizes the global telephone network into nine geographic zones. Zone 1 covers North America and several Caribbean nations, while zones 2 through 9 correspond roughly to continental regions, though political and historical factors have produced numerous exceptions to the geographic pattern. Each country code consists of one to three digits, with the total number of digits in a complete international telephone number limited to fifteen. The assignment process considers existing numbering capacity, population size, and telecommunications infrastructure, with some small territories sharing a code with a larger neighboring country.",
+      "domain": "telecommunications",
+      "token_count_estimate": 118,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Technical standards topic. Extremely dry."
+    },
+    {
+      "filler_id": "NF-023",
+      "content": "Textile finishing encompasses a range of chemical and mechanical treatments applied to woven or knitted fabrics after they leave the loom or knitting machine. Desizing removes the starch or synthetic sizing agents applied to warp yarns before weaving to improve their strength during the weaving process. Subsequent scouring with alkaline solutions strips natural oils, waxes, and residual impurities from the fiber surface, preparing the fabric for consistent dye uptake. Mercerization, a treatment specific to cotton, involves brief immersion in concentrated sodium hydroxide under tension, which swells the fiber cross-section from a collapsed ribbon shape to a more circular profile, increasing both luster and tensile strength.",
+      "domain": "textiles",
+      "token_count_estimate": 125,
+      "flesch_kincaid_grade": 11.8,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Industrial textile processing. Procedural chemistry."
+    },
+    {
+      "filler_id": "NF-024",
+      "content": "Cartographic projection methods transform the three-dimensional surface of the Earth onto a two-dimensional plane, each method introducing characteristic distortions in area, shape, distance, or direction. The Mercator projection, widely used for maritime navigation since its introduction in 1569, preserves angles and local shapes but progressively exaggerates areas at higher latitudes, making Greenland appear comparable in size to Africa despite being roughly fourteen times smaller. Equal-area projections such as the Mollweide maintain correct relative sizes of landmasses at the expense of angular conformality. No single projection can simultaneously preserve all geometric properties, and cartographers select projections based on the intended purpose and geographic extent of each map.",
+      "domain": "cartography",
+      "token_count_estimate": 127,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Map mathematics. Technical without being visually evocative."
+    },
+    {
+      "filler_id": "NF-025",
+      "content": "Groundwater recharge occurs when surface water percolates downward through soil and rock layers to replenish underlying aquifers. The rate of recharge depends on several factors including precipitation intensity, soil permeability, vegetation cover, slope gradient, and the depth to the water table. In arid and semi-arid regions, natural recharge rates are often extremely low, measured in millimeters per year, because most precipitation evaporates or is consumed by plants before reaching the saturated zone. Managed aquifer recharge programs, which deliberately introduce surface water into aquifer systems through infiltration basins, injection wells, or spreading grounds, have been implemented in many water-scarce regions to supplement natural replenishment and stabilize declining water tables.",
+      "domain": "hydrology",
+      "token_count_estimate": 130,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.1,
+      "notes": "Water science. Clinical treatment avoids drought anxiety."
+    },
+    {
+      "filler_id": "NF-026",
+      "content": "Glacial moraines are accumulations of unconsolidated debris transported and deposited by glacial ice during periods of advance and retreat. Terminal moraines form at the farthest point of glacial advance, creating ridges of unsorted sediment that mark the maximum extent of the ice sheet or valley glacier. Lateral moraines develop along the sides of valley glaciers where rock fragments fall from valley walls onto the ice margin, and medial moraines appear where two tributary glaciers merge, combining their lateral deposits into a single central ridge. The sediment composition of moraines provides geologists with information about the bedrock over which the glacier traveled and the distance the material was transported.",
+      "domain": "glaciology",
+      "token_count_estimate": 125,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Physical geography. Avoids climate change and ice loss framing."
+    },
+    {
+      "filler_id": "NF-027",
+      "content": "The arithmetic mean, the most commonly used measure of central tendency in descriptive statistics, is calculated by summing all observed values and dividing by the number of observations. While computationally straightforward, the arithmetic mean is sensitive to extreme values in a dataset, which can shift the result substantially away from the typical value experienced by most observations. Alternative measures such as the median, which identifies the middle value when observations are arranged in order, resist the influence of outliers and provide a more representative summary for heavily skewed distributions. The geometric mean, calculated as the nth root of the product of n values, is preferred when averaging rates of change or ratios because it accounts for the compounding effect that the arithmetic mean ignores.",
+      "domain": "statistics",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Elementary statistics. Maximally generic academic content."
+    },
+    {
+      "filler_id": "NF-028",
+      "content": "Civil aviation weather reporting uses a standardized format called METAR, an abbreviation derived from the French phrase for routine aviation weather report. Each METAR observation includes the reporting station identifier, time of observation in Coordinated Universal Time, wind direction and speed, visibility, cloud cover at specified altitudes, temperature and dewpoint, and altimeter setting. The format uses specific abbreviations and codes that allow pilots and dispatchers to extract essential weather information quickly, such as FEW for one to two oktas of cloud cover, SCT for three to four oktas, and BKN for five to seven oktas. Terminal aerodrome forecasts, or TAFs, extend this information with predicted conditions for periods of up to thirty hours.",
+      "domain": "aviation",
+      "token_count_estimate": 130,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Aviation weather codes. Extremely procedural."
+    },
+    {
+      "filler_id": "NF-029",
+      "content": "Railway track gauge, the distance between the inner faces of the two rails, varies across different national and regional rail networks despite efforts toward standardization. The most widely used gauge, 1,435 millimeters, known as standard gauge, was established by George Stephenson in the 1820s based on the width of existing colliery tramways in northeastern England. Broad gauge railways, with track widths exceeding standard gauge, operate in countries including India, Finland, Spain, and Portugal, while narrow gauge lines with smaller dimensions served mountainous terrain and colonial territories where construction costs needed to be minimized. Gauge differences between adjacent national networks create operational barriers that require either transshipment of cargo, bogie exchange, or variable-gauge wheelsets to maintain through-service.",
+      "domain": "railroad engineering",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Transport infrastructure. Historical and technical."
+    },
+    {
+      "filler_id": "NF-030",
+      "content": "Paper manufacturing begins with the preparation of pulp, a suspension of cellulose fibers in water obtained by mechanically or chemically breaking down wood chips or other plant materials. The Kraft process, the dominant chemical pulping method, dissolves lignin and other non-cellulosic components by cooking wood chips in a solution of sodium hydroxide and sodium sulfide at elevated temperature and pressure. The resulting pulp is washed, screened to remove oversized fiber bundles, and optionally bleached to increase brightness. On the paper machine, the dilute pulp suspension is deposited onto a moving wire mesh where water drains by gravity and suction, forming a continuous wet web that is pressed between heavy rollers and dried over heated cylinders to produce the finished sheet.",
+      "domain": "manufacturing",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Industrial process. Procedural chemistry and mechanical engineering."
+    },
+    {
+      "filler_id": "NF-031",
+      "content": "Float glass, the standard method for producing flat glass since the 1950s, involves pouring molten glass at approximately 1100 degrees Celsius onto a bath of molten tin inside a controlled atmosphere chamber. Because the molten glass is less dense than the tin, it spreads across the surface and forms a uniform layer whose thickness is determined by the speed at which the continuous glass ribbon is drawn off the bath. The tin bath atmosphere contains nitrogen and hydrogen to prevent oxidation of the tin surface, which would cause defects in the glass. After leaving the tin bath, the glass ribbon enters an annealing lehr, a temperature-controlled tunnel where gradual cooling relieves internal stresses that would otherwise make the glass prone to spontaneous fracture.",
+      "domain": "materials science",
+      "token_count_estimate": 132,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Glass manufacturing process. Technical and emotionally inert."
+    },
+    {
+      "filler_id": "NF-032",
+      "content": "The Universal Postal Union, established in 1874 as the General Postal Union, coordinates postal policies and standards among its 192 member countries. Under the union's terminal dues system, postal administrations compensate one another for the delivery of international mail items, with payment rates negotiated at quadrennial congresses. The system distinguishes between letter-post items, which include letters, postcards, and small packets below two kilograms, and parcel-post items subject to separate bilateral or multilateral agreements. Addressing standards maintained by the union specify that the recipient's name should appear first, followed by the delivery address, locality, and country name written in either the language of the destination country or one of the union's official languages.",
+      "domain": "postal systems",
+      "token_count_estimate": 130,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "International postal administration. Bureaucratic and dry."
+    },
+    {
+      "filler_id": "NF-033",
+      "content": "Numismatic grading systems assign condition ratings to coins based on the amount of wear, surface preservation, and visual appeal observed under magnification. The Sheldon scale, widely used in the United States, assigns numerical values from 1 to 70, where a grade of 1 indicates a coin so worn that only its type can be identified and a grade of 70 denotes a coin in perfect uncirculated condition with no post-minting imperfections visible under five-power magnification. Intermediate grades follow descriptive categories including Good, Very Good, Fine, Very Fine, Extremely Fine, About Uncirculated, and Mint State, each spanning a defined range of numerical values. Third-party grading services encapsulate evaluated coins in tamper-evident holders displaying the assigned grade, providing a standardized reference for collectors and dealers.",
+      "domain": "numismatics",
+      "token_count_estimate": 140,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Coin collecting standards. Niche hobby topic presented clinically."
+    },
+    {
+      "filler_id": "NF-034",
+      "content": "Archival storage environments require precise control of temperature, relative humidity, and light exposure to minimize the deterioration of paper-based documents, photographic materials, and magnetic media. The recommended temperature range for general paper collections is between 65 and 70 degrees Fahrenheit, with relative humidity maintained between 30 and 40 percent to balance the competing risks of desiccation-induced brittleness and moisture-promoted mold growth. Fluctuations in environmental conditions cause more damage than steady conditions at slightly suboptimal levels, as repeated expansion and contraction of hygroscopic materials accelerates mechanical breakdown of fibers. Light damage, which is cumulative and irreversible, is managed through the use of ultraviolet-filtering glazing, low-lux display lighting, and strict rotation schedules for exhibited materials.",
+      "domain": "archival science",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 11.8,
+      "panas_positive": 0.0,
+      "panas_negative": 0.1,
+      "notes": "Preservation science. Technical environmental control."
+    },
+    {
+      "filler_id": "NF-035",
+      "content": "The speed of sound in air depends primarily on temperature, increasing at a rate of approximately 0.6 meters per second for each degree Celsius rise. At a standard temperature of 20 degrees Celsius, sound travels through dry air at roughly 343 meters per second. Humidity has a smaller but measurable effect, slightly increasing the speed of sound because water vapor molecules are lighter than the nitrogen and oxygen molecules they displace. In solid materials, sound propagates considerably faster than in gases because the molecules are more tightly packed and elastic moduli are higher; for example, sound travels through structural steel at approximately 5,960 meters per second, more than seventeen times faster than through air at room temperature.",
+      "domain": "acoustics",
+      "token_count_estimate": 130,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Physics fundamentals. Quantitative and textbook-like."
+    },
+    {
+      "filler_id": "NF-036",
+      "content": "Earthworm activity influences soil structure through the continuous ingestion and excretion of soil particles, a process that redistributes organic matter and creates macropore channels that improve water infiltration and root penetration. The common earthworm Lumbricus terrestris can process its own body weight in soil daily, depositing nutrient-rich castings on the surface or within its burrow system. Darwin estimated that earthworm populations in English pastures could deposit approximately ten tons of castings per acre annually, gradually burying surface objects under a layer of processed soil. The burrow networks created by deep-burrowing species extend to depths exceeding two meters and persist long after the individual worms that created them have died, providing lasting improvements to soil drainage and aeration.",
+      "domain": "soil science",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.2,
+      "panas_negative": 0.0,
+      "notes": "Soil ecology. Mildly interesting but not emotionally engaging."
+    },
+    {
+      "filler_id": "NF-037",
+      "content": "Industrial fermentation for ethanol production typically uses the yeast Saccharomyces cerevisiae to convert sugars derived from corn, sugarcane, or other carbohydrate feedstocks into ethanol and carbon dioxide under anaerobic conditions. The process begins with milling and enzymatic treatment to break starch molecules into fermentable sugars, followed by inoculation with yeast and a fermentation period lasting between 48 and 72 hours. The resulting beer, containing eight to twelve percent ethanol by volume, undergoes distillation to concentrate the ethanol to approximately 95 percent, with further dehydration to near-anhydrous levels achieved through molecular sieve technology when fuel-grade ethanol is the desired product. The carbon dioxide generated during fermentation is captured and sold for use in carbonated beverages, dry ice production, and enhanced oil recovery.",
+      "domain": "biochemistry",
+      "token_count_estimate": 140,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Industrial bioprocessing. Factual and procedural."
+    },
+    {
+      "filler_id": "NF-038",
+      "content": "Ceramic kiln firing proceeds through several temperature-dependent stages that transform soft, fragile greenware into a durable finished product. During the initial water smoking phase below 200 degrees Celsius, residual moisture evaporates from the clay body, requiring a slow temperature increase to prevent steam pressure from cracking the ware. Between 350 and 600 degrees Celsius, chemically bound water is driven from the crystal structure of clay minerals in an irreversible reaction that permanently converts the material from soft clay to a rigid but porous state called bisque. The final vitrification stage at temperatures specific to each clay body causes partial melting of feldspar and silica components, filling pore spaces with glass and producing a dense, impermeable body suitable for functional use.",
+      "domain": "ceramics",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Ceramic engineering. Technical process description."
+    },
+    {
+      "filler_id": "NF-039",
+      "content": "Marine insurance developed as a distinct financial practice in the coffeehouses of seventeenth-century London, where merchants and ship owners sought to distribute the risk of cargo loss across multiple underwriters. Lloyd's Coffee House, established by Edward Lloyd around 1688, became the principal meeting place for these transactions and eventually evolved into the Lloyd's of London insurance market. A marine insurance policy typically covers the hull of the vessel, the cargo being transported, and the freight revenue expected from the voyage, with separate policies available for each category of risk. The principle of utmost good faith, a foundational concept in marine insurance law, requires both the insured party and the underwriter to disclose all material facts that could influence the assessment of risk or the calculation of premiums.",
+      "domain": "finance",
+      "token_count_estimate": 138,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Insurance history. Business and legal, no drama."
+    },
+    {
+      "filler_id": "NF-040",
+      "content": "Land drainage systems remove excess water from agricultural fields to prevent waterlogging, which reduces crop yields by depriving root zones of adequate oxygen. Subsurface drainage, the most common method in temperate farming regions, uses perforated pipes buried at depths of one to one and a half meters in parallel trenches spaced between ten and thirty meters apart. Water enters the pipes through perforations and flows by gravity to outlet ditches or pumping stations at the field margins. The pipe material has evolved from hand-laid clay tiles, used extensively through the nineteenth and early twentieth centuries, to corrugated polyethylene tubing wrapped in geotextile filters, which can be installed mechanically at much higher speed and lower cost per meter.",
+      "domain": "agricultural engineering",
+      "token_count_estimate": 132,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Farm infrastructure. Deeply mundane."
+    },
+    {
+      "filler_id": "NF-041",
+      "content": "Sustained-yield forestry manages timber harvesting to ensure that the volume of wood removed from a forest does not exceed the volume grown during the same period. Calculating sustainable harvest levels requires inventory data including standing timber volume by species and age class, site productivity indices that estimate growth rates under local soil and climate conditions, and mortality assumptions that account for losses from disease, insects, and windthrow. Rotation length, the period between planting and final harvest, varies from twenty-five years for fast-growing plantation species like radiata pine to over a hundred years for slow-growing hardwoods such as oak. Intermediate thinning operations conducted partway through the rotation remove suppressed and malformed trees, reducing competition for the remaining stems and improving their growth rates and log quality.",
+      "domain": "forestry",
+      "token_count_estimate": 138,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Forest management. Technical silviculture. Avoids deforestation framing."
+    },
+    {
+      "filler_id": "NF-042",
+      "content": "Maritime navigation charts depict water depths using soundings referenced to a vertical datum called chart datum, which is typically set at or near the lowest astronomical tide level so that charted depths represent worst-case conditions for vessels planning their passage. Depth contour lines, analogous to the elevation contours on topographic maps, connect points of equal depth and allow mariners to visualize the shape of the seafloor. Navigational hazards including rocks, wrecks, and shallow banks are marked with standardized symbols defined by the International Hydrographic Organization. Chart corrections, published in weekly notices to mariners, provide updates on newly surveyed depths, relocated aids to navigation, and changes in port facilities that affect the accuracy of previously issued charts.",
+      "domain": "navigation",
+      "token_count_estimate": 132,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Nautical charting. Technical and procedural."
+    },
+    {
+      "filler_id": "NF-043",
+      "content": "The development of accurate timekeeping instruments progressed from pendulum clocks, which achieved accuracies of approximately one second per day by the late seventeenth century, to quartz crystal oscillators introduced in the 1920s that reduced drift to fractions of a second per month. Pendulum clocks rely on the nearly isochronous property of a swinging pendulum, whose period depends primarily on its length and the local gravitational acceleration rather than the amplitude of the swing. Quartz timekeeping exploits the piezoelectric effect, in which a quartz crystal vibrates at a precise natural frequency when an electric current is applied, typically 32,768 hertz for wristwatch applications. Atomic clocks, the current standard for timekeeping, measure the frequency of electromagnetic radiation emitted during electron transitions in cesium-133 atoms, achieving accuracies better than one second in three hundred million years.",
+      "domain": "horology",
+      "token_count_estimate": 148,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Timekeeping technology. Historical progression presented clinically."
+    },
+    {
+      "filler_id": "NF-044",
+      "content": "Asphalt pavement construction for highway applications typically follows a layered design consisting of a prepared subgrade, one or more aggregate base courses, and a surface course of hot-mix asphalt. The hot-mix asphalt surface combines graded mineral aggregate with approximately five percent asphalt binder by weight, mixed at temperatures between 150 and 170 degrees Celsius to achieve a workable consistency during placement. Compaction by heavy vibratory rollers while the mixture remains above its cessation temperature eliminates air voids and establishes the interlocking aggregate structure that provides load-bearing capacity. Pavement design thickness is determined by expected traffic volume expressed in equivalent single-axle loads, subgrade soil strength measured by California Bearing Ratio testing, and desired service life, which typically ranges from fifteen to twenty years before major rehabilitation is required.",
+      "domain": "civil engineering",
+      "token_count_estimate": 145,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Road construction. Dense with technical specifications."
+    },
+    {
+      "filler_id": "NF-045",
+      "content": "Municipal water distribution systems deliver treated drinking water from treatment facilities to consumers through a network of transmission mains, distribution mains, and service connections. Transmission mains, typically the largest diameter pipes in the system, transport water over long distances from treatment plants to storage reservoirs and major demand centers. Distribution mains branch from the transmission network to serve individual streets and neighborhoods, with pipe diameters decreasing progressively toward the periphery of the network. System pressure is maintained by elevated storage tanks or booster pumping stations positioned at locations that ensure adequate pressure at the most distant and highest-elevation connections, with target pressures generally ranging from 40 to 80 pounds per square inch at the point of delivery.",
+      "domain": "water supply",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Utility infrastructure. Procedural and technical."
+    },
+    {
+      "filler_id": "NF-046",
+      "content": "Plain weave, the simplest and most common textile structure, interlaces warp and weft yarns in an alternating over-one-under-one pattern that produces a balanced, durable fabric with no distinct front or back face. Twill weave modifies this pattern so that weft yarns pass over two or more warp yarns before crossing under one, creating a diagonal rib visible on the fabric surface. The angle of the twill line depends on the specific interlacing sequence and the relative density of warp and weft yarns. Satin weave further extends the float length, producing long uninterrupted yarn segments on the fabric face that reflect light more uniformly and give the characteristic smooth appearance, though the reduced interlacing makes satin fabrics more susceptible to snagging and abrasion than plain or twill constructions.",
+      "domain": "textiles",
+      "token_count_estimate": 140,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Weaving structures. Technical textile construction."
+    },
+    {
+      "filler_id": "NF-047",
+      "content": "Commercial grain milling has evolved from stone grinding, which crushes the entire kernel into a single stream of whole meal, to the modern roller milling process that progressively separates the wheat kernel into its constituent parts. The first break passage cracks open the kernel and begins separating the starchy endosperm from the bran and germ layers. Subsequent reduction passages gradually reduce endosperm particles to the desired flour fineness through a series of corrugated and smooth steel rolls operating at differential speeds. Sifting between each passage sorts the milled material by particle size using stacked plansifter screens, directing oversized particles back for further reduction while passing finished flour to collection bins. A typical flour mill may contain twenty or more pairs of rolls arranged in a sequence calibrated to maximize extraction of white flour from the available endosperm.",
+      "domain": "food processing",
+      "token_count_estimate": 145,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Grain milling process. Industrial food production."
+    },
+    {
+      "filler_id": "NF-048",
+      "content": "Fresnel lenses, developed by French physicist Augustin-Jean Fresnel for use in lighthouses in the 1820s, achieve the optical performance of a large conventional lens using a fraction of the material and weight. The design divides the curved surface of a conventional lens into a series of concentric annular sections, each retaining the correct surface angle to focus light while eliminating the thickness of glass between sections. First-order Fresnel lenses, the largest classification, stand approximately 2.6 meters tall and can focus a lamp's output into a beam visible at distances exceeding twenty nautical miles. The manufacturing precision required for these lenses made them among the most sophisticated optical instruments of the nineteenth century, and surviving examples are preserved as historical artifacts in maritime museums around the world.",
+      "domain": "optics",
+      "token_count_estimate": 138,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Lighthouse optics. Historical technology."
+    },
+    {
+      "filler_id": "NF-049",
+      "content": "Suspension bridge design distributes the weight of the bridge deck and live traffic loads through vertical suspender cables to main cables that follow a parabolic curve between tower tops. The main cables transfer these loads to massive anchorages at each end of the bridge, where the cable force is resolved into compressive forces transmitted into the ground. The towers, which support the main cables at their highest points, must resist both the vertical compression from cable loading and lateral forces from wind. Bridge designers typically use aerodynamic deck cross-sections and may incorporate wind fairings, tuned mass dampers, or active control systems to prevent aeroelastic instability, a phenomenon in which wind-induced oscillations amplify to destructive amplitudes as demonstrated by the collapse of the original Tacoma Narrows Bridge in 1940.",
+      "domain": "structural engineering",
+      "token_count_estimate": 140,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.1,
+      "panas_negative": 0.1,
+      "notes": "Bridge engineering. Technical with brief historical reference."
+    },
+    {
+      "filler_id": "NF-050",
+      "content": "Petroleum refining separates crude oil into useful products through a combination of physical distillation and chemical conversion processes. Atmospheric distillation, the first stage in virtually every refinery, heats crude oil to approximately 370 degrees Celsius and feeds it into a fractionating column where components separate by boiling point, with lighter products such as naphtha and kerosene collecting at higher levels and heavier fractions such as gas oil and atmospheric residue collecting near the bottom. Catalytic cracking breaks long-chain hydrocarbon molecules from heavier fractions into shorter molecules suitable for gasoline and diesel fuel, while catalytic reforming rearranges the molecular structure of naphtha to produce higher-octane gasoline blending components and aromatic hydrocarbons used as chemical feedstocks.",
+      "domain": "petrochemistry",
+      "token_count_estimate": 138,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Refinery operations. Process chemistry."
+    },
+    {
+      "filler_id": "NF-051",
+      "content": "Natural rubber processing begins with the collection of latex, a milky fluid tapped from incisions in the bark of the Hevea brasiliensis tree, which is cultivated commercially across equatorial regions of Southeast Asia, West Africa, and South America. The collected latex is stabilized with ammonia to prevent premature coagulation during transport to processing facilities. Controlled coagulation is then induced using dilute formic or acetic acid, and the resulting coagulum is passed through a series of rollers that remove water and produce thin sheets or crumb rubber suitable for further manufacturing. Vulcanization, discovered by Charles Goodyear in the 1840s, cross-links the polymer chains in raw rubber with sulfur at elevated temperatures, transforming the soft, tacky material into a durable elastic product resistant to heat, abrasion, and chemical degradation.",
+      "domain": "polymer science",
+      "token_count_estimate": 145,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Rubber processing. Industrial chemistry with historical reference."
+    },
+    {
+      "filler_id": "NF-052",
+      "content": "Architectural paint formulations consist of four primary components: binder, pigment, solvent, and additives, each performing a specific function in the applied coating. The binder, typically an acrylic, alkyd, or latex polymer, forms the continuous film that adheres to the substrate and provides durability after the solvent evaporates. Pigments contribute color and opacity, with titanium dioxide serving as the dominant white pigment due to its high refractive index, which scatters visible light efficiently and provides excellent hiding power. Solvents, either water for latex paints or organic liquids for solvent-borne coatings, reduce viscosity to allow application by brush, roller, or spray. Additives present in small concentrations include thickeners to control flow behavior, biocides to prevent microbial growth in the can, and defoamers to eliminate bubbles during mixing and application.",
+      "domain": "coatings",
+      "token_count_estimate": 148,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Paint chemistry. Technical formulation details."
+    },
+    {
+      "filler_id": "NF-053",
+      "content": "Optical fiber communication transmits information as pulses of light through thin strands of glass or plastic, achieving data rates and transmission distances far exceeding those possible with electrical copper cables. A standard single-mode telecommunications fiber has a glass core diameter of approximately nine micrometers, surrounded by a cladding layer with a slightly lower refractive index that confines light within the core through total internal reflection. Signal attenuation in modern silica fibers is lowest at wavelengths near 1550 nanometers, where losses approach 0.2 decibels per kilometer, allowing optical signals to travel more than one hundred kilometers between amplifiers. Wavelength-division multiplexing increases the capacity of individual fibers by simultaneously transmitting multiple independent data streams at slightly different wavelengths through the same physical fiber.",
+      "domain": "telecommunications",
+      "token_count_estimate": 138,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Fiber optics. Technical with quantitative specifications."
+    },
+    {
+      "filler_id": "NF-054",
+      "content": "Mechanical refrigeration cycles exploit the thermodynamic principle that a fluid absorbs heat when it evaporates and releases heat when it condenses. In a standard vapor-compression cycle, a compressor raises the pressure and temperature of a gaseous refrigerant, which then flows through a condenser where it releases heat to the surrounding environment and changes phase from gas to liquid. The high-pressure liquid passes through an expansion valve that reduces its pressure and temperature before entering the evaporator, where it absorbs heat from the space being cooled and evaporates back to a gas. The cycle repeats continuously, effectively pumping thermal energy from a cooler space to a warmer one, with the energy input to the compressor providing the thermodynamic work necessary to drive this transfer against the natural temperature gradient.",
+      "domain": "thermodynamics",
+      "token_count_estimate": 142,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Refrigeration cycle. Textbook thermodynamics."
+    },
+    {
+      "filler_id": "NF-055",
+      "content": "Bookbinding techniques are broadly classified into adhesive binding and sewn binding methods, each offering different balances of cost, durability, and openability. Perfect binding, the most common adhesive method used for paperback books and magazines, applies a flexible hot-melt or polyurethane adhesive to the roughened spine edges of gathered signature blocks, attaching them directly to a wraparound cover without thread or wire. Case binding, used for hardcover books, sews signatures together with thread before attaching them to rigid boards covered in cloth, paper, or synthetic material through endpapers glued to the inner faces of the boards. The grain direction of all paper and board components must align parallel to the spine to prevent warping, as paper expands more across the grain than along it when humidity changes.",
+      "domain": "bookbinding",
+      "token_count_estimate": 140,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Traditional craft presented as industrial process."
+    },
+    {
+      "filler_id": "NF-056",
+      "content": "Modern plumbing systems separate potable water supply piping from drainage, waste, and vent piping to prevent contamination of the drinking water supply. Supply systems operate under pressure, typically between 40 and 80 pounds per square inch, delivered by municipal pumping stations or private well systems, while drainage systems rely on gravity flow through pipes sloped at a minimum gradient of one-quarter inch per foot for most residential applications. Vent pipes connected to the drainage system extend to the roof and provide atmospheric pressure equalization, preventing the siphoning of water from fixture traps that would otherwise allow sewer gases to enter the building. Trap seals, the small volumes of water retained in U-shaped pipe fittings beneath each plumbing fixture, create a continuous liquid barrier between the living space and the drainage system.",
+      "domain": "building services",
+      "token_count_estimate": 142,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Plumbing engineering. Unglamorous infrastructure."
+    },
+    {
+      "filler_id": "NF-057",
+      "content": "The Scoville scale measures the pungency of chili peppers and other spicy foods by quantifying the concentration of capsaicinoids, the chemical compounds responsible for the sensation of heat. Wilbur Scoville developed the original test in 1912 using human tasters who evaluated serial dilutions of pepper extract until the burning sensation could no longer be detected. Modern methods replace the subjective panel with high-performance liquid chromatography, which directly measures capsaicinoid concentrations and converts the results to Scoville Heat Units. Bell peppers register zero on the scale, jalapenos typically fall between 2,000 and 8,000 units, habaneros reach 100,000 to 350,000 units, and the hottest cultivated varieties such as the Carolina Reaper exceed two million units.",
+      "domain": "food science",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 11.0,
+      "panas_positive": 0.1,
+      "panas_negative": 0.0,
+      "notes": "Analytical chemistry applied to food. Mildly interesting but clinically presented."
+    },
+    {
+      "filler_id": "NF-058",
+      "content": "Cadastral surveying establishes and records the boundaries of land parcels for purposes of ownership registration, taxation, and land-use regulation. Unlike topographic or geodetic surveying, which focuses on physical features and precise positioning, cadastral work is primarily concerned with legal boundaries that may not correspond to any visible feature on the ground. Boundary determination often requires the interpretation of historical deeds, which may describe property limits using references to monuments, natural features, or distances and bearings measured from established points. Where original monuments are missing or disturbed, surveyors apply legal principles including the hierarchy of evidence, which generally prioritizes natural monuments over artificial ones, artificial monuments over courses and distances, and courses and distances over stated areas.",
+      "domain": "surveying",
+      "token_count_estimate": 135,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Legal surveying. Dry professional practice."
+    },
+    {
+      "filler_id": "NF-059",
+      "content": "Wastewater treatment in activated sludge systems depends on a diverse microbial community that consumes dissolved organic matter under aerated conditions in a biological reactor. The process maintains a suspension of microorganisms, collectively termed activated sludge, at concentrations between 1,500 and 4,000 milligrams per liter of mixed liquor suspended solids. After a retention time of several hours, during which bacteria metabolize the organic pollutants, the mixed liquor flows to a secondary clarifier where the sludge settles and is separated from the treated effluent. A portion of the settled sludge is returned to the aeration tank to maintain the working biomass concentration, while excess sludge produced by bacterial growth is wasted from the system and processed for disposal through thickening, digestion, and dewatering.",
+      "domain": "environmental engineering",
+      "token_count_estimate": 140,
+      "flesch_kincaid_grade": 12.0,
+      "panas_positive": 0.0,
+      "panas_negative": 0.0,
+      "notes": "Wastewater biology and engineering. Technical process."
+    },
+    {
+      "filler_id": "NF-060",
+      "content": "The Beaufort wind force scale, devised by Royal Navy hydrographer Francis Beaufort in 1805, classifies wind speed into thirteen categories ranging from force 0, representing calm conditions with wind speeds below one knot, to force 12, corresponding to hurricane-force winds exceeding 64 knots. Originally defined entirely by the effect of wind on the sails of a fully rigged frigate, the scale was later adapted with descriptions of observable conditions on land and at sea to accommodate the transition from sail to steam-powered vessels. At force 6, large branches move and umbrellas become difficult to use; at force 10, trees are uprooted and considerable structural damage occurs. Meteorological services now correlate each Beaufort number with a specific range of wind speeds measured by anemometer, though the original qualitative descriptions remain useful for observers without instruments.",
+      "domain": "meteorology",
+      "token_count_estimate": 148,
+      "flesch_kincaid_grade": 11.5,
+      "panas_positive": 0.1,
+      "panas_negative": 0.1,
+      "notes": "Wind measurement history. Clinical despite storm references."
     }
   ]
 }

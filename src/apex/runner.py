@@ -28,6 +28,9 @@ from apex.types import (
     ProbeResult,
 )
 
+# Type alias for frozen prompt lookup
+FrozenLookup = dict[tuple[str, float, int], dict]
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_MESSAGE = "You are a helpful assistant."
@@ -128,6 +131,22 @@ class ProbeRunner:
             model_info_overrides={"model_id": ev_cfg.name},
         )
 
+    def _load_frozen_prompts(self) -> FrozenLookup:
+        """Load frozen calibration prompts into a lookup dict."""
+        from apex.calibration_store import CalibrationStore
+
+        cal_store = CalibrationStore(self.config.database_dsn)
+        frozen = cal_store.get_prompts()
+        cal_store.close()
+
+        lookup: FrozenLookup = {}
+        for fp in frozen:
+            key = (fp["probe_id"], fp["position_percent"], fp["context_length"])
+            lookup[key] = fp
+
+        logger.info("Loaded %d frozen calibration prompts", len(lookup))
+        return lookup
+
     def _run_model(self, model_cfg: ModelConfig, probes) -> None:
         logger.info("Running model: %s (%s)", model_cfg.name, model_cfg.backend)
 
@@ -140,9 +159,17 @@ class ProbeRunner:
         fillers = self.library.get_fillers(self.config.filler_type_enum)
         assembler = PromptAssembler(tokenizer, fillers)
 
+        # Load frozen prompts if calibrated mode
+        frozen_lookup: FrozenLookup = {}
+        if self.config.use_calibration:
+            frozen_lookup = self._load_frozen_prompts()
+            if not frozen_lookup:
+                logger.warning("Calibrated mode enabled but no frozen prompts found — falling back to assembler")
+
         # Build run queue
         completed = self.store.get_completed_runs(model_info.model_id)
         queue = []
+        missing_frozen = 0
         for probe in probes:
             query = self.library.get_query_for_probe(probe.probe_id)
             if query is None:
@@ -153,7 +180,21 @@ class ProbeRunner:
                     for run_num in range(1, self.config.repetitions + 1):
                         key = (probe.probe_id, pos, ctx_len, run_num)
                         if key not in completed:
-                            queue.append((probe, query, pos, ctx_len, run_num))
+                            frozen_key = (probe.probe_id, pos, ctx_len)
+                            frozen = frozen_lookup.get(frozen_key) if frozen_lookup else None
+                            if frozen_lookup and frozen is None:
+                                missing_frozen += 1
+                                logger.debug(
+                                    "No frozen prompt for %s pos=%.2f ctx=%d — will use assembler",
+                                    probe.probe_id, pos, ctx_len,
+                                )
+                            queue.append((probe, query, pos, ctx_len, run_num, frozen))
+
+        if missing_frozen > 0:
+            logger.warning(
+                "%d queue items have no frozen prompt — assembler fallback will be used",
+                missing_frozen,
+            )
 
         if not queue:
             logger.info("All probes already completed for %s", model_info.model_id)
@@ -166,10 +207,11 @@ class ProbeRunner:
 
         if self.config.workers <= 1:
             # Sequential path — zero overhead, same behavior as before
-            for probe, query, pos, ctx_len, run_num in tqdm(queue, desc=model_info.model_id):
+            for probe, query, pos, ctx_len, run_num, frozen in tqdm(queue, desc=model_info.model_id):
                 self._execute_probe(
                     adapter, model_info, assembler, dispatcher,
                     probe, query, pos, ctx_len, run_num,
+                    frozen_prompt=frozen,
                 )
         else:
             # Parallel path — per-thread resources via threading.local()
@@ -200,12 +242,13 @@ class ProbeRunner:
             return local.adapter, local.store, local.dispatcher
 
         def _worker(item):
-            probe, query, pos, ctx_len, run_num = item
+            probe, query, pos, ctx_len, run_num, frozen = item
             adapter, store, dispatcher = _get_thread_resources()
             self._execute_probe(
                 adapter, model_info, assembler, dispatcher,
                 probe, query, pos, ctx_len, run_num,
                 store=store,
+                frozen_prompt=frozen,
             )
 
         with ThreadPoolExecutor(max_workers=self.config.workers) as pool:
@@ -234,22 +277,35 @@ class ProbeRunner:
         context_length: int,
         run_number: int,
         store: ResultStore | None = None,
+        frozen_prompt: dict | None = None,
     ) -> None:
-        """Execute a single probe: two-turn protocol, score, record."""
-        assembled = assembler.assemble(
-            probe=probe,
-            test_query=query,
-            position_percent=position_percent,
-            context_length=context_length,
-            config_seed=self.config.seed,
-            run_number=run_number,
-        )
+        """Execute a single probe: two-turn protocol, score, record.
+
+        If frozen_prompt is provided (calibrated mode), uses the pre-assembled
+        text from the calibration_prompts table instead of assembling fresh.
+        """
+        if frozen_prompt is not None:
+            full_text = frozen_prompt["full_text"]
+            target_position_tokens = frozen_prompt["target_position_tokens"]
+            filler_type = "calibrated"
+        else:
+            assembled = assembler.assemble(
+                probe=probe,
+                test_query=query,
+                position_percent=position_percent,
+                context_length=context_length,
+                config_seed=self.config.seed,
+                run_number=run_number,
+            )
+            full_text = assembled.full_text
+            target_position_tokens = assembled.target_position_tokens
+            filler_type = self.config.filler_type
 
         # Turn 1: Send filler+probe
         refused = False
         try:
             turn1_response = self._call_with_retry(
-                adapter.single_turn, SYSTEM_MESSAGE, assembled.full_text
+                adapter.single_turn, SYSTEM_MESSAGE, full_text
             )
         except Exception as e:
             logger.error("Turn 1 failed for %s at %.0f%%: %s", probe.probe_id, position_percent * 100, e)
@@ -264,7 +320,7 @@ class ProbeRunner:
         if not refused:
             messages = [
                 ChatMessage(role="system", content=SYSTEM_MESSAGE),
-                ChatMessage(role="user", content=assembled.full_text),
+                ChatMessage(role="user", content=full_text),
                 ChatMessage(role="assistant", content=turn1_response.content),
                 ChatMessage(role="user", content=query.query),
             ]
@@ -299,13 +355,13 @@ class ProbeRunner:
             max_context_window=model_info.max_context_window,
             context_length=context_length,
             context_fill_ratio=context_length / model_info.max_context_window,
-            target_position=assembled.target_position_tokens,
+            target_position=target_position_tokens,
             target_position_percent=position_percent,
             dimension=probe.dimension.value,
             content_type=probe.content_type,
             probe_id=probe.probe_id,
             probe_content=probe.content,
-            filler_type=self.config.filler_type,
+            filler_type=filler_type,
             test_query_id=query.query_id,
             temperature=self.config.temperature,
             run_number=run_number,

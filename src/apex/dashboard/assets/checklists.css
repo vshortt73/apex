@@ -1,0 +1,11 @@
+/* Fix Dash checklist and radio label colors for dark theme */
+
+.dash-checklist label,
+.dash-radioitems label {
+    color: #e0e0e0 !important;
+}
+
+.dash-checklist label:hover,
+.dash-radioitems label:hover {
+    color: #ffffff !important;
+}

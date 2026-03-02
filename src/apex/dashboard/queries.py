@@ -172,6 +172,73 @@ class QueryManager:
         finally:
             self._release(conn)
 
+    def get_run_configs(self) -> pd.DataFrame:
+        """Per-run_uuid config summary extracted from probe_results."""
+        conn = self._connect()
+        try:
+            return self._query_df(
+                """SELECT run_uuid, model_id, model_architecture, model_parameters,
+                          quantization, max_context_window, filler_type, temperature,
+                          COUNT(*) AS result_count,
+                          COUNT(DISTINCT probe_id) AS distinct_probes,
+                          COUNT(DISTINCT dimension) AS distinct_dimensions,
+                          COUNT(DISTINCT context_length) AS distinct_ctx_lengths,
+                          COUNT(DISTINCT target_position_percent) AS distinct_positions,
+                          MAX(run_number) AS max_run_number,
+                          SUM(CASE WHEN refused = 1 THEN 1 ELSE 0 END) AS refused_count,
+                          SUM(CASE WHEN score IS NULL THEN 1 ELSE 0 END) AS null_score_count,
+                          AVG(score) AS mean_score,
+                          MIN(timestamp) AS first_timestamp,
+                          MAX(timestamp) AS last_timestamp
+                   FROM probe_results
+                   WHERE run_uuid IS NOT NULL
+                   GROUP BY run_uuid, model_id, model_architecture, model_parameters,
+                            quantization, max_context_window, filler_type, temperature
+                   ORDER BY first_timestamp DESC""",
+                conn,
+            )
+        except Exception:
+            return pd.DataFrame()
+        finally:
+            self._release(conn)
+
+    def get_run_context_lengths(self, run_uuid: str) -> list[int]:
+        """Distinct context lengths used in a specific run."""
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                f"SELECT DISTINCT context_length FROM probe_results WHERE run_uuid = {self._ph} ORDER BY context_length",
+                (run_uuid,),
+            ).fetchall()
+            return [r[0] for r in rows]
+        except Exception:
+            return []
+        finally:
+            self._release(conn)
+
+    def get_run_dimension_breakdown(self, run_uuid: str) -> pd.DataFrame:
+        """Per-dimension counts and mean scores for a specific run."""
+        conn = self._connect()
+        try:
+            return self._query_df(
+                f"""SELECT dimension,
+                          COUNT(*) AS count,
+                          AVG(score) AS mean_score,
+                          MIN(score) AS min_score,
+                          MAX(score) AS max_score,
+                          SUM(CASE WHEN refused = 1 THEN 1 ELSE 0 END) AS refused
+                   FROM probe_results
+                   WHERE run_uuid = {self._ph}
+                   GROUP BY dimension
+                   ORDER BY dimension""",
+                conn,
+                params=(run_uuid,),
+            )
+        except Exception:
+            return pd.DataFrame(columns=["dimension", "count", "mean_score", "min_score", "max_score", "refused"])
+        finally:
+            self._release(conn)
+
     def get_dimension_breakdown(self, model_id: str) -> pd.DataFrame:
         """Per-dimension counts and mean scores for a model."""
         conn = self._connect()
@@ -594,6 +661,199 @@ class QueryManager:
             return None
         finally:
             self._release(conn)
+
+    # ------------------------------------------------------------------
+    # Aggregation (in pandas, not SQL)
+    # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # Calibration
+    # ------------------------------------------------------------------
+
+    def has_calibration_tables(self) -> bool:
+        """Check whether calibration_baselines and calibration_prompts tables exist."""
+        conn = self._connect()
+        try:
+            if self._is_postgres:
+                df = self._query_df(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema = 'public' AND table_name IN ('calibration_baselines', 'calibration_prompts')",
+                    conn,
+                )
+            else:
+                df = self._query_df(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('calibration_baselines', 'calibration_prompts')",
+                    conn,
+                )
+            return len(df) == 2
+        except Exception:
+            return False
+        finally:
+            self._release(conn)
+
+    def get_calibration_status(self) -> dict:
+        """Return {prompt_count, baseline_df} summarising calibration state."""
+        conn = self._connect()
+        try:
+            prompt_df = self._query_df("SELECT COUNT(*) AS cnt FROM calibration_prompts", conn)
+            prompt_count = int(prompt_df.iloc[0]["cnt"]) if not prompt_df.empty else 0
+            baseline_df = self._query_df(
+                "SELECT baseline_type, model_id, COUNT(*) AS count "
+                "FROM calibration_baselines GROUP BY baseline_type, model_id "
+                "ORDER BY model_id, baseline_type",
+                conn,
+            )
+            return {"prompt_count": prompt_count, "baseline_df": baseline_df}
+        except Exception:
+            return {"prompt_count": 0, "baseline_df": pd.DataFrame(columns=["baseline_type", "model_id", "count"])}
+        finally:
+            self._release(conn)
+
+    def get_calibrated_models(self) -> list[str]:
+        """Distinct model_ids that have calibration baselines."""
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT DISTINCT model_id FROM calibration_baselines ORDER BY model_id"
+            ).fetchall()
+            return [r[0] for r in rows]
+        except Exception:
+            return []
+        finally:
+            self._release(conn)
+
+    def get_baselines_overview(self, model_id: str) -> pd.DataFrame:
+        """Baseline rows for a model: probe_id, dimension, baseline_type, score, score_method."""
+        conn = self._connect()
+        try:
+            return self._query_df(
+                f"SELECT probe_id, dimension, baseline_type, score, score_method "
+                f"FROM calibration_baselines WHERE model_id = {self._ph} "
+                f"ORDER BY dimension, probe_id, baseline_type",
+                conn,
+                params=(model_id,),
+            )
+        except Exception:
+            return pd.DataFrame(columns=["probe_id", "dimension", "baseline_type", "score", "score_method"])
+        finally:
+            self._release(conn)
+
+    def get_calibrated_curve_data(
+        self,
+        model_id: str,
+        context_length: int | None = None,
+        dimension: str | None = None,
+    ) -> pd.DataFrame:
+        """Curve data filtered to filler_type = 'calibrated'."""
+        conn = self._connect()
+        try:
+            conditions = [f"model_id = {self._ph}", "filler_type = 'calibrated'"]
+            params: list = [model_id]
+            if context_length is not None:
+                conditions.append(f"context_length = {self._ph}")
+                params.append(context_length)
+            if dimension is not None:
+                conditions.append(f"dimension = {self._ph}")
+                params.append(dimension)
+            where = " WHERE " + " AND ".join(conditions)
+            return self._query_df(
+                f"""SELECT probe_id, dimension,
+                           target_position_percent * 100 AS target_position_percent,
+                           score, context_length, content_type, run_number, refused
+                    FROM probe_results{where}
+                    ORDER BY target_position_percent""",
+                conn,
+                params=params,
+            )
+        except Exception:
+            return pd.DataFrame(columns=[
+                "probe_id", "dimension", "target_position_percent",
+                "score", "context_length", "content_type", "run_number", "refused",
+            ])
+        finally:
+            self._release(conn)
+
+    def get_dynamic_curve_data(
+        self,
+        model_id: str,
+        context_length: int | None = None,
+        dimension: str | None = None,
+    ) -> pd.DataFrame:
+        """Curve data filtered to filler_type != 'calibrated'."""
+        conn = self._connect()
+        try:
+            conditions = [f"model_id = {self._ph}", "filler_type != 'calibrated'"]
+            params: list = [model_id]
+            if context_length is not None:
+                conditions.append(f"context_length = {self._ph}")
+                params.append(context_length)
+            if dimension is not None:
+                conditions.append(f"dimension = {self._ph}")
+                params.append(dimension)
+            where = " WHERE " + " AND ".join(conditions)
+            return self._query_df(
+                f"""SELECT probe_id, dimension,
+                           target_position_percent * 100 AS target_position_percent,
+                           score, context_length, content_type, run_number, refused
+                    FROM probe_results{where}
+                    ORDER BY target_position_percent""",
+                conn,
+                params=params,
+            )
+        except Exception:
+            return pd.DataFrame(columns=[
+                "probe_id", "dimension", "target_position_percent",
+                "score", "context_length", "content_type", "run_number", "refused",
+            ])
+        finally:
+            self._release(conn)
+
+    @staticmethod
+    def normalize_by_baselines(
+        raw_df: pd.DataFrame,
+        baselines_df: pd.DataFrame,
+        baseline_type: str = "anchored",
+    ) -> pd.DataFrame:
+        """Normalize raw scores by baseline and aggregate to (dimension, position) → mean/std/CI.
+
+        Returns same shape as ``aggregate_curve`` output with 'normalized' replacing 'score'.
+        """
+        if raw_df.empty or baselines_df.empty:
+            return pd.DataFrame(
+                columns=["dimension", "target_position_percent", "mean", "std", "count", "ci_lower", "ci_upper"]
+            )
+
+        bl = baselines_df[baselines_df["baseline_type"] == baseline_type][["probe_id", "score"]].rename(
+            columns={"score": "baseline_score"}
+        )
+        if bl.empty:
+            return pd.DataFrame(
+                columns=["dimension", "target_position_percent", "mean", "std", "count", "ci_lower", "ci_upper"]
+            )
+
+        scored = raw_df[raw_df["score"].notna() & (raw_df["refused"] == 0)].copy()
+        if scored.empty:
+            return pd.DataFrame(
+                columns=["dimension", "target_position_percent", "mean", "std", "count", "ci_lower", "ci_upper"]
+            )
+
+        merged = scored.merge(bl, on="probe_id", how="inner")
+        if merged.empty:
+            return pd.DataFrame(
+                columns=["dimension", "target_position_percent", "mean", "std", "count", "ci_lower", "ci_upper"]
+            )
+
+        merged["normalized"] = merged["score"] / merged["baseline_score"].replace(0, float("nan"))
+
+        agg = (
+            merged.groupby(["dimension", "target_position_percent"])["normalized"]
+            .agg(["mean", "std", "count"])
+            .reset_index()
+        )
+        agg["std"] = agg["std"].fillna(0)
+        agg["ci_lower"] = agg["mean"] - 1.96 * agg["std"] / agg["count"] ** 0.5
+        agg["ci_upper"] = agg["mean"] + 1.96 * agg["std"] / agg["count"] ** 0.5
+        return agg
 
     # ------------------------------------------------------------------
     # Aggregation (in pandas, not SQL)

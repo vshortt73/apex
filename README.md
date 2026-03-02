@@ -47,7 +47,7 @@ The assembler constructs deterministic prompts using seeded RNG:
 
 ```
 src/apex/
-├── cli.py              CLI entry point (run, status, export, validate, dashboard)
+├── cli.py              CLI entry point (run, status, export, validate, calibrate, dashboard)
 ├── config.py           YAML config loading → RunConfig/ModelConfig dataclasses
 ├── types.py            All dataclasses and enums (Probe, TestQuery, ProbeResult, etc.)
 ├── libraries.py        Load JSON probe/filler/query libraries
@@ -55,6 +55,8 @@ src/apex/
 ├── assembler.py        Deterministic prompt assembly with seeded RNG
 ├── runner.py           ProbeRunner — orchestrates the two-turn execution loop
 ├── storage.py          ResultStore — write results with upsert/resume support
+├── calibration.py      CalibrationGenerator, CalibrationValidator, BaselineRunner
+├── calibration_store.py CalibrationStore — frozen prompts and baselines storage
 ├── db.py               Database backend abstraction (SQLite + PostgreSQL)
 ├── migrate.py          Schema migrations
 │
@@ -84,16 +86,17 @@ src/apex/
     │   ├── model_catalog.py .gguf file scanner
     │   └── process_manager.py  APEX run subprocess management
     └── views/
-        ├── run_monitor.py          Live progress, activity feed, error tracker
-        ├── run_control.py          Config builder, preflight checks, launch
+        ├── run_monitor.py          Live progress, activity feed, error tracker, run config
+        ├── run_control.py          Config builder, preflight checks, launch (incl. calibrated)
         ├── infrastructure.py       Server management, GPU monitoring
         ├── settings.py             Dashboard configuration UI
-        ├── summary.py              Aggregate statistics per model
+        ├── summary.py              Per-run cards with config details
         ├── curve_explorer.py       Position vs score curves
         ├── dimension_comparison.py Cross-dimension correlation analysis
         ├── context_scaling.py      Context length sensitivity
         ├── cross_model.py          Multi-model comparison
-        └── probe_detail.py         Single probe drill-down
+        ├── probe_detail.py         Single probe drill-down
+        └── calibration.py          Baseline scores, normalized curves, calibrated vs dynamic
 ```
 
 ## Quick Start
@@ -177,19 +180,20 @@ python -m apex dashboard postgresql://user:pass@localhost:5432/apex
 python -m apex dashboard results.db
 ```
 
-The dashboard opens at `http://localhost:8050` with 10 tabs:
+The dashboard opens at `http://localhost:8050` with 11 tabs:
 
 | Tab | Purpose |
 |-----|---------|
-| Run Monitor | Live progress bars, activity feed, error tracker |
-| Run Control | Build configs, preflight check, launch runs |
+| Run Monitor | Live progress, activity feed, error tracker, active run config |
+| Run Control | Build configs, preflight check, launch runs (incl. calibrated) |
 | Infrastructure | Start/stop llama-servers, GPU monitoring |
-| Summary | Aggregate stats per model |
+| Summary | Per-run cards with full config, dimension breakdown |
 | Curve Explorer | Position vs score curves by dimension |
 | Dimension Comparison | Cross-dimension correlation, sweet spots |
 | Context Scaling | How scores change with context length |
 | Cross-Model | Multi-model comparison on same axes |
 | Probe Detail | Single probe drill-down with raw responses |
+| Calibration | Baseline scores, normalized curves, calibrated vs dynamic comparison |
 | Settings | Infrastructure paths, nodes, database, defaults |
 
 ## CLI Commands
@@ -201,6 +205,9 @@ python -m apex status <db>              # Show run progress and statistics
 python -m apex export <db> -o out.json  # Export results to JSON
 python -m apex delete <db> [filters]    # Delete results (see below)
 python -m apex rescore <db>             # Rescore existing results (see below)
+python -m apex calibrate generate [--db DB] [--data-dir DIR]          # Generate frozen prompt matrix
+python -m apex calibrate validate [--db DB] [--data-dir DIR]          # Validate frozen prompts
+python -m apex calibrate baseline <config> [--type bare|anchored]     # Run calibration baselines
 python -m apex dashboard [db]           # Launch interactive dashboard
 python -m apex migrate <sqlite_file>    # Migrate SQLite results to PostgreSQL
 ```
@@ -311,6 +318,31 @@ Probe libraries are static and versioned. Nothing is generated at runtime. Given
 | `evaluator` | Application + Salience | Sends response + rubric to evaluator model, parses scored JSON |
 | `semantic` | (Available) | Cosine similarity via sentence-transformers |
 
+## Calibration
+
+Raw APEX scores conflate probe difficulty, filler interference, and position effects. The calibration subsystem decomposes these into separable factors using a two-tier baseline:
+
+- **Bare baseline** (`--type bare`) — probe alone, no filler. Establishes the ceiling score.
+- **Anchored baseline** (`--type anchored`) — probe with filler at optimal endpoint positions (0.05 and 0.95, higher score kept). Isolates the filler effect.
+
+From these: `filler_factor = anchored / bare` and `position_factor = raw_score / anchored`.
+
+```bash
+# 1. Generate frozen prompt matrix (2,280 prompts for full library)
+python -m apex calibrate generate --db results.db --data-dir data
+
+# 2. Validate integrity
+python -m apex calibrate validate --db results.db --data-dir data
+
+# 3. Run bare baselines
+python -m apex calibrate baseline run.yaml --db results.db --type bare
+
+# 4. Run anchored baselines (requires step 1)
+python -m apex calibrate baseline run.yaml --db results.db --type anchored
+```
+
+See [docs/setup.md](docs/setup.md) for the complete calibration reference.
+
 ## Database
 
 APEX supports both SQLite and PostgreSQL:
@@ -336,7 +368,7 @@ APEX is designed for long overnight runs. If interrupted:
 python -m pytest tests/ -v
 ```
 
-95 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, rescore, delete operations, dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
+126 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, rescore, delete operations, calibration (generator, validator, baseline runner, store, calibrated runs), dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
 
 ## Design Principles
 
@@ -350,4 +382,4 @@ python -m pytest tests/ -v
 
 ## Project
 
-APEX v1.0.0 — ~8,500 lines of Python across 47 source files, 95 tests, 10-tab interactive dashboard.
+APEX v1.2.0 — ~11,500 lines of Python across 51 source files, 126 tests, 11-tab interactive dashboard.

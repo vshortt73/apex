@@ -45,6 +45,7 @@ class RunConfig:
     )
     context_lengths: list[int] = field(default_factory=lambda: [4096])
     workers: int = 1
+    use_calibration: bool = False
     probe_select: str | list[str] = "all"
     models: list[ModelConfig] = field(default_factory=list)
     evaluator_models: list[ModelConfig] = field(default_factory=list)
@@ -90,6 +91,7 @@ def load_config(path: str | Path) -> RunConfig:
         ]),
         context_lengths=data.get("context_lengths", [4096]),
         workers=run.get("workers", 1),
+        use_calibration=run.get("use_calibration", False),
         probe_select=probes_sec.get("select", "all"),
     )
 

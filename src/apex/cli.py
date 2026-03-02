@@ -24,11 +24,15 @@ def cmd_run(args: argparse.Namespace) -> None:
     config = load_config(args.config)
     if args.workers is not None:
         config.workers = args.workers
+    if args.calibrated:
+        config.use_calibration = True
     library = ProbeLibrary(config.data_dir)
     dsn = config.database_dsn
     store = ResultStore(dsn)
 
+    mode = "calibrated (frozen prompts)" if config.use_calibration else "dynamic (assembled)"
     print(f"APEX v{__version__} — Starting probe run")
+    print(f"  Mode: {mode}")
     print(f"  Models: {len(config.models)}")
     print(f"  Probes: {len(library.probes)}")
     print(f"  Positions: {config.positions}")
@@ -325,6 +329,161 @@ def cmd_migrate(args: argparse.Namespace) -> None:
     print(f"  Rows skipped:  {rows_skipped}")
 
 
+def cmd_calibrate_generate(args: argparse.Namespace) -> None:
+    from apex.calibration import CALIBRATION_CONTEXT_LENGTHS, CALIBRATION_POSITIONS, CalibrationGenerator
+    from apex.calibration_store import CalibrationStore
+    from apex.libraries import ProbeLibrary
+
+    dsn = _resolve_dsn(args.db)
+    library = ProbeLibrary(args.data_dir)
+    store = CalibrationStore(dsn)
+
+    positions = CALIBRATION_POSITIONS
+    context_lengths = args.context_lengths or CALIBRATION_CONTEXT_LENGTHS
+
+    if args.force:
+        deleted = store.delete_prompts()
+        if deleted:
+            print(f"Deleted {deleted} existing prompts.")
+
+    generator = CalibrationGenerator(library, tokenizer_spec=args.tokenizer)
+    prompts = generator.generate(
+        positions=positions,
+        context_lengths=context_lengths,
+        seed=args.seed,
+    )
+    store.write_prompts(prompts)
+
+    print(f"APEX calibrate generate — {dsn}")
+    print(f"  Probes: {len(library.probes)}")
+    print(f"  Positions: {len(positions)}")
+    print(f"  Context lengths: {context_lengths}")
+    print(f"  Generated: {len(prompts)} frozen prompts")
+    print(f"  Stored: {store.count_prompts()} total")
+    store.close()
+
+
+def cmd_calibrate_validate(args: argparse.Namespace) -> None:
+    from apex.calibration import CalibrationValidator
+    from apex.calibration_store import CalibrationStore
+    from apex.libraries import ProbeLibrary
+
+    dsn = _resolve_dsn(args.db)
+    library = ProbeLibrary(args.data_dir)
+    store = CalibrationStore(dsn)
+
+    prompts = store.get_prompts()
+    if not prompts:
+        print("No calibration prompts found in database.")
+        store.close()
+        sys.exit(1)
+
+    validator = CalibrationValidator(library, tokenizer_spec=args.tokenizer)
+    results = validator.validate(prompts)
+
+    passed = sum(1 for r in results if r.passed)
+    failed = len(results) - passed
+
+    print(f"APEX calibrate validate — {dsn}")
+    print(f"  Total prompts: {len(results)}")
+    print(f"  Passed: {passed}")
+    print(f"  Failed: {failed}")
+
+    if args.verbose or failed > 0:
+        for r in results:
+            if not r.passed:
+                print(f"  FAIL {r.probe_id} pos={r.position_percent:.0%} ctx={r.context_length}")
+                for msg in r.messages:
+                    print(f"    - {msg}")
+
+    store.close()
+    if failed > 0:
+        sys.exit(1)
+
+
+def cmd_calibrate_baseline(args: argparse.Namespace) -> None:
+    from apex.calibration import BaselineRunner
+    from apex.calibration_store import CalibrationStore
+    from apex.config import load_config
+    from apex.libraries import ProbeLibrary
+    from apex.models.base import get_adapter
+    from apex.scoring.base import ScoringDispatcher
+
+    config = load_config(args.config)
+    dsn = _resolve_dsn(args.db) if args.db else config.database_dsn
+    library = ProbeLibrary(args.data_dir or config.data_dir)
+    store = CalibrationStore(dsn)
+
+    # Pick model — first from --model flag, else first in config
+    model_cfg = None
+    if args.model:
+        for m in config.models:
+            if m.name == args.model:
+                model_cfg = m
+                break
+        if model_cfg is None:
+            print(f"Error: model '{args.model}' not found in config.", file=sys.stderr)
+            store.close()
+            sys.exit(1)
+    else:
+        model_cfg = config.models[0]
+
+    adapter = get_adapter(
+        backend=model_cfg.backend,
+        model_name=model_cfg.model_name,
+        base_url=model_cfg.base_url,
+        api_key=model_cfg.api_key,
+        temperature=0.0,
+        model_info_overrides={
+            "model_id": model_cfg.name,
+            "architecture": model_cfg.architecture,
+            "parameters": model_cfg.parameters,
+            "quantization": model_cfg.quantization,
+            "max_context_window": model_cfg.max_context_window,
+            "tokenizer": model_cfg.tokenizer,
+        },
+    )
+
+    evaluator_adapter = None
+    if config.evaluator_models:
+        ev_cfg = config.evaluator_models[0]
+        evaluator_adapter = get_adapter(
+            backend=ev_cfg.backend,
+            model_name=ev_cfg.model_name,
+            base_url=ev_cfg.base_url,
+            api_key=ev_cfg.api_key,
+            temperature=0.0,
+            model_info_overrides={"model_id": ev_cfg.name},
+        )
+
+    dispatcher = ScoringDispatcher(evaluator_adapter)
+    baseline_type = args.type
+
+    if args.force:
+        deleted = store.delete_baselines(
+            model_id=model_cfg.name, baseline_type=baseline_type,
+        )
+        if deleted:
+            print(f"Deleted {deleted} existing {baseline_type} baselines for {model_cfg.name}.")
+
+    probe_ids = args.probe_ids if args.probe_ids else None
+
+    runner = BaselineRunner(library, dispatcher, adapter, store)
+    baselines = runner.run_baselines(baseline_type=baseline_type, probe_ids=probe_ids)
+
+    scored = sum(1 for b in baselines if b.score is not None)
+    errors = sum(1 for b in baselines if b.error is not None)
+    print(f"APEX calibrate baseline — {dsn}")
+    print(f"  Model: {model_cfg.name}")
+    print(f"  Type: {baseline_type}")
+    print(f"  Baselines run: {len(baselines)}")
+    print(f"  Scored: {scored}")
+    if errors:
+        print(f"  Errors: {errors}")
+    print(f"  Total stored: {store.count_baselines(model_id=model_cfg.name)}")
+    store.close()
+
+
 def cmd_validate(args: argparse.Namespace) -> None:
     from apex.config import load_config
     from apex.libraries import ProbeLibrary
@@ -382,6 +541,7 @@ def main(argv: list[str] | None = None) -> None:
     p_run = subparsers.add_parser("run", help="Execute a probe run")
     p_run.add_argument("config", help="Path to YAML config file")
     p_run.add_argument("--workers", type=int, default=None, help="Number of parallel workers (overrides config)")
+    p_run.add_argument("--calibrated", action="store_true", help="Use frozen calibration prompts instead of assembling fresh")
     p_run.set_defaults(func=cmd_run)
 
     # status
@@ -440,6 +600,39 @@ def main(argv: list[str] | None = None) -> None:
     p_migrate = subparsers.add_parser("migrate", help="Migrate SQLite results to PostgreSQL")
     p_migrate.add_argument("sqlite_file", help="Path to source SQLite database")
     p_migrate.set_defaults(func=cmd_migrate)
+
+    # calibrate (nested subcommands)
+    p_cal = subparsers.add_parser("calibrate", help="Calibration subsystem: generate, validate, baseline")
+    cal_sub = p_cal.add_subparsers(dest="cal_command", required=True)
+
+    # calibrate generate
+    p_cal_gen = cal_sub.add_parser("generate", help="Generate frozen calibration prompts")
+    p_cal_gen.add_argument("--db", default="results.db", help="Database path or PostgreSQL DSN")
+    p_cal_gen.add_argument("--data-dir", default="data", help="Path to data directory")
+    p_cal_gen.add_argument("--tokenizer", default="approximate", help="Tokenizer spec")
+    p_cal_gen.add_argument("--seed", type=int, default=42, help="RNG seed")
+    p_cal_gen.add_argument("--context-lengths", type=int, nargs="+", default=None, help="Context lengths")
+    p_cal_gen.add_argument("--force", action="store_true", help="Delete existing prompts before generating")
+    p_cal_gen.set_defaults(func=cmd_calibrate_generate)
+
+    # calibrate validate
+    p_cal_val = cal_sub.add_parser("validate", help="Validate frozen calibration prompts")
+    p_cal_val.add_argument("--db", default="results.db", help="Database path or PostgreSQL DSN")
+    p_cal_val.add_argument("--data-dir", default="data", help="Path to data directory")
+    p_cal_val.add_argument("--tokenizer", default="approximate", help="Tokenizer spec")
+    p_cal_val.add_argument("--verbose", action="store_true", help="Show detailed results")
+    p_cal_val.set_defaults(func=cmd_calibrate_validate)
+
+    # calibrate baseline
+    p_cal_base = cal_sub.add_parser("baseline", help="Run calibration baselines")
+    p_cal_base.add_argument("config", help="Path to YAML config file")
+    p_cal_base.add_argument("--db", default="", help="Database path or PostgreSQL DSN (default: from config)")
+    p_cal_base.add_argument("--data-dir", default="", help="Path to data directory (default: from config)")
+    p_cal_base.add_argument("--model", help="Model name from config")
+    p_cal_base.add_argument("--type", default="bare", choices=["bare", "anchored"], help="Baseline type")
+    p_cal_base.add_argument("--probe-ids", nargs="+", help="Specific probe IDs to baseline")
+    p_cal_base.add_argument("--force", action="store_true", help="Delete existing baselines before running")
+    p_cal_base.set_defaults(func=cmd_calibrate_baseline)
 
     # validate
     p_validate = subparsers.add_parser("validate", help="Validate config and libraries")

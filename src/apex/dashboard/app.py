@@ -37,6 +37,7 @@ from apex.dashboard.views import (
     context_scaling,
     cross_model,
     probe_detail,
+    calibration,
     settings,
 )
 from apex.dashboard.services.process_manager import ProcessManager
@@ -115,6 +116,7 @@ def build_app(db_path: str) -> Dash:
                 dcc.Tab(label="Context Scaling", value="ctxscale", style=tab_style, selected_style=tab_selected_style),
                 dcc.Tab(label="Cross-Model", value="xmodel", style=tab_style, selected_style=tab_selected_style),
                 dcc.Tab(label="Probe Detail", value="probe", style=tab_style, selected_style=tab_selected_style),
+                dcc.Tab(label="Calibration", value="calibration", style=tab_style, selected_style=tab_selected_style),
                 dcc.Tab(label="Settings", value="settings", style=tab_style, selected_style=tab_selected_style),
             ],
             style={"padding": "0 24px"},
@@ -155,6 +157,8 @@ def build_app(db_path: str) -> Dash:
             return cross_model.layout()
         elif tab == "probe":
             return probe_detail.layout()
+        elif tab == "calibration":
+            return calibration.layout()
         elif tab == "settings":
             return settings.layout(dashboard_config)
         return html.P("Unknown tab")
@@ -171,7 +175,7 @@ def build_app(db_path: str) -> Dash:
         return paused, ("Resume" if paused else "Pause"), ("Paused" if paused else "Auto-refresh: 30s")
 
     # -- Register all view callbacks --
-    run_monitor.register_callbacks(app, qm)
+    run_monitor.register_callbacks(app, qm, pm)
     run_control.register_callbacks(app, qm, pm, dashboard_config)
     infrastructure.register_callbacks(app, qm, dashboard_config)
     summary.register_callbacks(app, qm)
@@ -180,6 +184,7 @@ def build_app(db_path: str) -> Dash:
     context_scaling.register_callbacks(app, qm)
     cross_model.register_callbacks(app, qm)
     probe_detail.register_callbacks(app, qm)
+    calibration.register_callbacks(app, qm)
     settings.register_callbacks(app, dashboard_config)
 
     return app

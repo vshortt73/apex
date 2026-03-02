@@ -29,6 +29,9 @@ def layout() -> html.Div:
         # System status bar (GPU / VRAM / CPU / RAM)
         html.Div(id="monitor-system-bar"),
 
+        # Active run configurations
+        html.Div(id="monitor-run-configs"),
+
         # Progress cards
         html.Div(id="monitor-progress-cards"),
 
@@ -46,7 +49,121 @@ def layout() -> html.Div:
     ])
 
 
-def register_callbacks(app, qm):
+def register_callbacks(app, qm, pm=None):
+    @app.callback(
+        Output("monitor-run-configs", "children"),
+        Input("monitor-interval", "n_intervals"),
+    )
+    def update_run_configs(_n):
+        if pm is None:
+            return html.Div()
+
+        import yaml
+        from pathlib import Path
+
+        active = [r for r in pm.get_runs() if r.status == "running"]
+        if not active:
+            return html.Div()
+
+        cards = []
+        for run_info in active:
+            # Read the full config YAML
+            config = {}
+            if run_info.config_path:
+                try:
+                    config = yaml.safe_load(Path(run_info.config_path).read_text()) or {}
+                except Exception:
+                    pass
+
+            run_sec = config.get("run", {})
+            models = config.get("models", [])
+            evaluators = config.get("evaluator_models", [])
+            positions = config.get("positions", [])
+            ctx_lengths = config.get("context_lengths", [])
+
+            # Model names
+            model_names = [m.get("name", "?") for m in models]
+            eval_names = [m.get("name", "?") for m in evaluators]
+
+            # Format context lengths
+            ctx_str = ", ".join(f"{c:,}" for c in sorted(ctx_lengths))
+
+            # Run mode
+            calibrated = run_sec.get("use_calibration", False)
+            mode = "Calibrated (frozen)" if calibrated else "Dynamic (assembled)"
+
+            _label = {"fontSize": "12px", "color": TEXT_SECONDARY, "minWidth": "110px", "display": "inline-block"}
+            _value = {"fontSize": "13px", "fontWeight": "600"}
+
+            def _row(label, value, value_style=None):
+                return html.Div([
+                    html.Span(label, style=_label),
+                    html.Span(value, style={**_value, **(value_style or {})}),
+                ], style={"marginBottom": "4px"})
+
+            rows = [
+                _row("Mode:", mode, {"color": WONG["blue"]} if calibrated else {}),
+                _row("Model:", ", ".join(model_names)),
+            ]
+
+            if models:
+                m = models[0]
+                details = []
+                if m.get("architecture", "unknown") != "unknown":
+                    details.append(m["architecture"])
+                if m.get("parameters"):
+                    details.append(m["parameters"])
+                if m.get("quantization"):
+                    details.append(m["quantization"])
+                if details:
+                    rows.append(_row("Spec:", " / ".join(details)))
+                rows.append(_row("Backend:", f"{m.get('backend', '?')} @ {m.get('base_url', '?')}"))
+
+            if eval_names:
+                rows.append(_row("Evaluator:", ", ".join(eval_names)))
+
+            rows.extend([
+                _row("Positions:", f"{len(positions)} ({positions[0]}–{positions[-1]})" if positions else "none"),
+                _row("Context:", ctx_str or "none"),
+                _row("Filler:", run_sec.get("filler_type", "neutral")),
+                _row("Workers:", str(run_sec.get("workers", 1))),
+                _row("Seed:", str(run_sec.get("seed", 42))),
+                _row("Temperature:", str(run_sec.get("temperature", 0.0))),
+                _row("Repetitions:", str(run_sec.get("repetitions", 1))),
+            ])
+
+            # Elapsed time
+            elapsed_text = ""
+            try:
+                from datetime import datetime
+                elapsed = datetime.now() - run_info.start_time
+                hours, remainder = divmod(int(elapsed.total_seconds()), 3600)
+                minutes = remainder // 60
+                if hours > 0:
+                    elapsed_text = f"{hours}h {minutes}m"
+                else:
+                    elapsed_text = f"{minutes}m"
+            except Exception:
+                pass
+
+            header_parts = [
+                html.Span("Active Run", style={"fontWeight": "700", "fontSize": "15px"}),
+                html.Span(f"PID {run_info.pid}", style={"color": TEXT_MUTED, "fontSize": "12px", "marginLeft": "12px"}),
+            ]
+            if elapsed_text:
+                header_parts.append(html.Span(
+                    f"running {elapsed_text}",
+                    style={"color": TEXT_SECONDARY, "fontSize": "12px", "marginLeft": "auto"},
+                ))
+
+            card = html.Div([
+                html.Div(header_parts, style={"display": "flex", "alignItems": "center", "marginBottom": "10px"}),
+                *rows,
+            ], style=CARD_STYLE)
+            cards.append(card)
+
+        return cards
+
     @app.callback(
         Output("monitor-system-bar", "children"),
         Input("monitor-interval", "n_intervals"),
