@@ -57,6 +57,10 @@ def layout() -> html.Div:
                     dcc.Dropdown(id="cal-model", clearable=False),
                 ], style={"flex": "1", "marginRight": "12px"}),
                 html.Div([
+                    html.Label("Baseline Model", style=LABEL_STYLE),
+                    dcc.Dropdown(id="cal-baseline-model", clearable=False),
+                ], style={"flex": "1", "marginRight": "12px"}),
+                html.Div([
                     html.Label("Context Length", style=LABEL_STYLE),
                     dcc.Dropdown(id="cal-context-length", clearable=False),
                 ], style={"flex": "1"}),
@@ -133,8 +137,10 @@ def register_callbacks(app, qm):
     @app.callback(
         Output("cal-status", "children"),
         Input("refresh-interval", "n_intervals"),
+        Input("cal-model", "value"),
+        Input("cal-baseline-model", "value"),
     )
-    def update_status(_n):
+    def update_status(_n, run_model, baseline_model):
         if not qm.has_calibration_tables():
             return html.Div([
                 html.P(
@@ -171,12 +177,17 @@ def register_callbacks(app, qm):
                 style={"color": TEXT_MUTED},
             ))
 
-        # Check for calibrated runs
-        models = qm.get_calibrated_models()
+        # Check for calibrated runs across all models
         has_cal_runs = False
-        if models:
-            cal_df = qm.get_calibrated_curve_data(models[0])
-            has_cal_runs = not cal_df.empty
+        for m in qm.get_calibrated_models():
+            cal_df = qm.get_calibrated_curve_data(m)
+            if not cal_df.empty:
+                has_cal_runs = True
+                rows.append(html.Div([
+                    html.Span(f"{m}", style={"fontWeight": "600", "marginRight": "8px"}),
+                    html.Span("calibrated runs: ", style={"color": TEXT_SECONDARY}),
+                    html.Span(f"{len(cal_df)} results"),
+                ]))
 
         if not has_cal_runs and not bl_df.empty:
             rows.append(html.Div([
@@ -185,6 +196,14 @@ def register_callbacks(app, qm):
                     "Launch a run with \"Use calibrated prompts\" enabled in Run Control.",
                     style={"fontWeight": "600"},
                 ),
+            ], style={"marginTop": "8px"}))
+
+        if run_model and baseline_model and run_model != baseline_model:
+            rows.append(html.Div([
+                html.Span("Cross-model normalization: ", style={"color": TEXT_SECONDARY}),
+                html.Span(f"runs from {run_model}", style={"fontWeight": "600"}),
+                html.Span(" normalized against baselines from ", style={"color": TEXT_SECONDARY}),
+                html.Span(f"{baseline_model}", style={"fontWeight": "600"}),
             ], style={"marginTop": "8px"}))
 
         return html.Div(rows)
@@ -201,6 +220,23 @@ def register_callbacks(app, qm):
         opts = [{"label": m, "value": m} for m in models]
         if current and current in models:
             return opts, no_update
+        return opts, (opts[0]["value"] if opts else None)
+
+    # 1b. Baseline model dropdown
+    @app.callback(
+        Output("cal-baseline-model", "options"),
+        Output("cal-baseline-model", "value"),
+        Input("cal-model", "value"),
+        State("cal-baseline-model", "value"),
+    )
+    def update_baseline_models(model_id, current):
+        models = qm.get_baseline_models()
+        opts = [{"label": m, "value": m} for m in models]
+        if current and current in models:
+            return opts, current
+        # Default to the selected run model if it has baselines
+        if model_id and model_id in models:
+            return opts, model_id
         return opts, (opts[0]["value"] if opts else None)
 
     # 2. Context length cascade
@@ -241,10 +277,10 @@ def register_callbacks(app, qm):
     # 4. Baseline bar chart
     @app.callback(
         Output("cal-baseline-chart", "figure"),
-        Input("cal-model", "value"),
+        Input("cal-baseline-model", "value"),
         Input("cal-baseline-dims", "value"),
     )
-    def update_baseline_chart(model_id, dimensions):
+    def update_baseline_chart(baseline_model, dimensions):
         global _baseline_figure, _baseline_dataframe
 
         fig = go.Figure()
@@ -255,13 +291,13 @@ def register_callbacks(app, qm):
             barmode="group",
         )
 
-        if not model_id or not dimensions:
+        if not baseline_model or not dimensions:
             fig.update_layout(title="Select a model and dimensions")
             _baseline_figure = fig
             _baseline_dataframe = None
             return fig
 
-        baselines = qm.get_baselines_overview(model_id)
+        baselines = qm.get_baselines_overview(baseline_model)
         if baselines.empty:
             fig.update_layout(title="No baselines available for this model")
             _baseline_figure = fig
@@ -296,7 +332,7 @@ def register_callbacks(app, qm):
                 marker_color=colors[bt],
             ))
 
-        fig.update_layout(title=f"{model_id} — Baseline Scores")
+        fig.update_layout(title=f"{baseline_model} — Baseline Scores")
         _baseline_figure = fig
         return fig
 
@@ -304,11 +340,12 @@ def register_callbacks(app, qm):
     @app.callback(
         Output("cal-norm-graph", "figure"),
         Input("cal-model", "value"),
+        Input("cal-baseline-model", "value"),
         Input("cal-context-length", "value"),
         Input("cal-norm-dims", "value"),
         Input("cal-norm-options", "value"),
     )
-    def update_norm_curves(model_id, context_length, dimensions, options):
+    def update_norm_curves(model_id, baseline_model, context_length, dimensions, options):
         global _norm_figure, _norm_dataframe
 
         fig = go.Figure()
@@ -330,15 +367,29 @@ def register_callbacks(app, qm):
         show_ci = "ci" in options
         show_ref = "ref" in options
 
+        bl_model = baseline_model or model_id
         raw_df = qm.get_calibrated_curve_data(model_id, context_length)
-        baselines_df = qm.get_baselines_overview(model_id)
+        baselines_df = qm.get_baselines_overview(bl_model)
         raw_df = raw_df[raw_df["dimension"].isin(dimensions)]
         _norm_dataframe = raw_df
+
+        if raw_df.empty and baselines_df.empty:
+            fig.update_layout(title=f"No calibrated runs for {model_id} or baselines for {bl_model}")
+            _norm_figure = fig
+            return fig
+        if raw_df.empty:
+            fig.update_layout(title=f"No calibrated runs for {model_id} — run with 'Use calibrated prompts' enabled")
+            _norm_figure = fig
+            return fig
+        if baselines_df.empty or baselines_df[baselines_df["baseline_type"] == "anchored"].empty:
+            fig.update_layout(title=f"No anchored baselines for {bl_model} — run `apex calibrate baseline`")
+            _norm_figure = fig
+            return fig
 
         agg = qm.normalize_by_baselines(raw_df, baselines_df, "anchored")
 
         if agg.empty:
-            fig.update_layout(title="No calibrated run data for normalization")
+            fig.update_layout(title="Normalization produced no results (score/baseline merge failed)")
             _norm_figure = fig
             return fig
 
@@ -378,7 +429,10 @@ def register_callbacks(app, qm):
                 marker=dict(size=5),
             ))
 
-        fig.update_layout(title=f"{model_id} — Position Factor at {context_length} tokens")
+        if bl_model != model_id:
+            fig.update_layout(title=f"{model_id} (baselines: {bl_model}) — Position Factor at {context_length} tokens")
+        else:
+            fig.update_layout(title=f"{model_id} — Position Factor at {context_length} tokens")
         _norm_figure = fig
         return fig
 

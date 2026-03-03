@@ -353,6 +353,89 @@ class TestLaunchHistory:
         assert qm.get_launch_by_id("nonexistent-id") is None
 
 
+# ---- Per-run curve data tests ----
+
+class TestPerRunCurve:
+    """Tests for per-run curve explorer features."""
+
+    @pytest.fixture
+    def db_with_runs(self, tmp_path):
+        """Create a database with known run_uuid data."""
+        db = tmp_path / "runs_test.db"
+        backend = SqliteBackend(db)
+        backend.create_schema()
+        conn = backend.connection
+
+        positions = [0.0, 0.25, 0.50, 0.75, 1.0]
+        uuid_a = "aaaaaaaa-1111-2222-3333-444444444444"
+        uuid_b = "bbbbbbbb-1111-2222-3333-444444444444"
+
+        for pos in positions:
+            # Run A: factual_recall at 4096
+            _insert_result(conn, model_id="model-A", probe_id=f"fr-a-{int(pos*100)}",
+                           dimension="factual_recall", target_position_percent=pos,
+                           score=max(0.0, 1.0 - pos), context_length=4096,
+                           run_uuid=uuid_a, filler_type="neutral",
+                           timestamp="2026-03-01T10:00:00")
+            # Run B: factual_recall at 4096
+            _insert_result(conn, model_id="model-A", probe_id=f"fr-b-{int(pos*100)}",
+                           dimension="factual_recall", target_position_percent=pos,
+                           score=max(0.0, 0.8 - pos * 0.5), context_length=4096,
+                           run_uuid=uuid_b, filler_type="adversarial",
+                           timestamp="2026-03-01T11:00:00")
+            # Run A: factual_recall at 8192
+            _insert_result(conn, model_id="model-A", probe_id=f"fr-a8k-{int(pos*100)}",
+                           dimension="factual_recall", target_position_percent=pos,
+                           score=max(0.0, 0.9 - pos), context_length=8192,
+                           run_uuid=uuid_a, filler_type="neutral",
+                           timestamp="2026-03-01T10:05:00")
+
+        backend.close()
+        return db
+
+    @pytest.fixture
+    def qm_runs(self, db_with_runs):
+        return QueryManager(db_with_runs)
+
+    def test_get_curve_data_includes_run_uuid(self, qm_runs):
+        """get_curve_data should include run_uuid column."""
+        df = qm_runs.get_curve_data("model-A", 4096)
+        assert "run_uuid" in df.columns
+        assert df["run_uuid"].notna().all()
+
+    def test_get_run_uuids_for_model(self, qm_runs):
+        """get_run_uuids_for_model returns grouped run info."""
+        df = qm_runs.get_run_uuids_for_model("model-A")
+        assert len(df) == 2  # uuid_a has 2 context lengths but groups by filler too
+        uuids = set(df["run_uuid"])
+        assert "aaaaaaaa-1111-2222-3333-444444444444" in uuids
+        assert "bbbbbbbb-1111-2222-3333-444444444444" in uuids
+        assert "result_count" in df.columns
+        assert "filler_type" in df.columns
+
+    def test_get_run_uuids_for_model_with_context_filter(self, qm_runs):
+        """Filtering by context_length narrows results."""
+        df = qm_runs.get_run_uuids_for_model("model-A", context_length=8192)
+        assert len(df) == 1
+        assert df.iloc[0]["run_uuid"] == "aaaaaaaa-1111-2222-3333-444444444444"
+        assert df.iloc[0]["result_count"] == 5
+
+    def test_get_run_uuids_for_model_empty(self, qm_runs):
+        """Non-existent model returns empty DataFrame."""
+        df = qm_runs.get_run_uuids_for_model("nonexistent-model")
+        assert df.empty
+        assert "run_uuid" in df.columns
+
+    def test_aggregate_curve_by_run_uuid(self, qm_runs):
+        """aggregate_curve works with 'run_uuid' as group_col."""
+        df = qm_runs.get_curve_data("model-A", 4096)
+        agg = QueryManager.aggregate_curve(df, "run_uuid")
+        assert "run_uuid" in agg.columns
+        assert "mean" in agg.columns
+        uuids = set(agg["run_uuid"])
+        assert len(uuids) == 2
+
+
 # ---- App creation test ----
 
 class TestAppCreation:

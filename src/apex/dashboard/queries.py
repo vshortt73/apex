@@ -285,12 +285,41 @@ class QueryManager:
             return self._query_df(
                 f"""SELECT probe_id, dimension,
                            target_position_percent * 100 AS target_position_percent,
-                           score, context_length, content_type, run_number, refused
+                           score, context_length, content_type, run_number, refused,
+                           run_uuid
                     FROM probe_results{where}
                     ORDER BY target_position_percent""",
                 conn,
                 params=params,
             )
+        finally:
+            self._release(conn)
+
+    def get_run_uuids_for_model(
+        self,
+        model_id: str,
+        context_length: int | None = None,
+    ) -> pd.DataFrame:
+        """Run UUIDs for a model with metadata: (run_uuid, filler_type, result_count, first_ts, last_ts)."""
+        conn = self._connect()
+        try:
+            conditions = [f"model_id = {self._ph}", "run_uuid IS NOT NULL"]
+            params: list = [model_id]
+            if context_length is not None:
+                conditions.append(f"context_length = {self._ph}")
+                params.append(context_length)
+            where = " WHERE " + " AND ".join(conditions)
+            return self._query_df(
+                f"""SELECT run_uuid, filler_type, COUNT(*) AS result_count,
+                           MIN(timestamp) AS first_ts, MAX(timestamp) AS last_ts
+                    FROM probe_results{where}
+                    GROUP BY run_uuid, filler_type
+                    ORDER BY first_ts""",
+                conn,
+                params=params,
+            )
+        except Exception:
+            return pd.DataFrame(columns=["run_uuid", "filler_type", "result_count", "first_ts", "last_ts"])
         finally:
             self._release(conn)
 
@@ -709,12 +738,28 @@ class QueryManager:
         finally:
             self._release(conn)
 
-    def get_calibrated_models(self) -> list[str]:
-        """Distinct model_ids that have calibration baselines."""
+    def get_baseline_models(self) -> list[str]:
+        """Distinct model_ids that have calibration baselines recorded."""
         conn = self._connect()
         try:
             rows = conn.execute(
                 "SELECT DISTINCT model_id FROM calibration_baselines ORDER BY model_id"
+            ).fetchall()
+            return [r[0] for r in rows]
+        except Exception:
+            return []
+        finally:
+            self._release(conn)
+
+    def get_calibrated_models(self) -> list[str]:
+        """Distinct model_ids that have calibration baselines OR calibrated run data."""
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT DISTINCT model_id FROM calibration_baselines "
+                "UNION "
+                "SELECT DISTINCT model_id FROM probe_results WHERE filler_type = 'calibrated' "
+                "ORDER BY model_id"
             ).fetchall()
             return [r[0] for r in rows]
         except Exception:

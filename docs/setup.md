@@ -451,10 +451,12 @@ position_factor = raw_score / anchored  # pure positional effect, filler removed
 
 The Calibration tab in the dashboard provides four visualizations:
 
-- **Status panel** — Shows frozen prompt count, per-model baseline counts, and next-step guidance
-- **Baseline bar chart** — Grouped bars showing bare, anchored, and filler_factor scores per probe, filterable by dimension
-- **Normalized curves** — Position factor (score / anchored baseline) across the context window, with CI bands and y=1.0 reference line
+- **Status panel** — Shows frozen prompt count, per-model baseline counts, and next-step guidance. When cross-model normalization is active, displays which model's baselines are being used.
+- **Baseline bar chart** — Grouped bars showing bare, anchored, and filler_factor scores per probe, filterable by dimension. Driven by the **Baseline Model** selector.
+- **Normalized curves** — Position factor (score / anchored baseline) across the context window, with CI bands and y=1.0 reference line. Uses run data from the **Model** selector and baselines from the **Baseline Model** selector.
 - **Calibrated vs Dynamic** — Overlaid curves comparing calibrated runs (frozen prompts) against dynamic runs (assembled prompts) for a single dimension
+
+**Cross-model normalization:** The **Baseline Model** dropdown lets you normalize a model's calibrated runs against a different model's baselines. This is useful when baselines were recorded under one model name (e.g., `"Qwen3-32B-Q4_K_M"`) but calibrated runs were executed under a different name (e.g., `"Qwen3-32B-Q4_K_M-CALIBRATED"`). The dropdown only shows models that have baselines recorded and defaults to matching the run model when possible.
 
 The tab degrades gracefully: if no calibration data exists, it shows setup instructions. If baselines exist but no calibrated runs, it directs the user to Run Control.
 
