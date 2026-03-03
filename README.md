@@ -208,6 +208,8 @@ python -m apex rescore <db>             # Rescore existing results (see below)
 python -m apex calibrate generate [--db DB] [--data-dir DIR]          # Generate frozen prompt matrix
 python -m apex calibrate validate [--db DB] [--data-dir DIR]          # Validate frozen prompts
 python -m apex calibrate baseline <config> [--type bare|anchored]     # Run calibration baselines
+python -m apex calibrate export [--db DB] [-o FILE]                   # Export calibration data to JSON
+python -m apex calibrate import <file> [--db DB]                      # Import calibration data from JSON
 python -m apex dashboard [db]           # Launch interactive dashboard
 python -m apex migrate <sqlite_file>    # Migrate SQLite results to PostgreSQL
 ```
@@ -339,6 +341,12 @@ python -m apex calibrate baseline run.yaml --db results.db --type bare
 
 # 4. Run anchored baselines (requires step 1)
 python -m apex calibrate baseline run.yaml --db results.db --type anchored
+
+# 5. Export calibration data (portable JSON)
+python -m apex calibrate export --db results.db -o calibration.json
+
+# 6. Import on another machine
+python -m apex calibrate import calibration.json --db postgresql://user:pass@newhost/apex
 ```
 
 See [docs/setup.md](docs/setup.md) for the complete calibration reference.
@@ -368,7 +376,7 @@ APEX is designed for long overnight runs. If interrupted:
 python -m pytest tests/ -v
 ```
 
-126 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, rescore, delete operations, calibration (generator, validator, baseline runner, store, calibrated runs), dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
+141 tests covering assembler, config, libraries, tokenizers, storage, runner, scoring, rescore, delete operations, calibration (generator, validator, baseline runner, store, calibrated runs, export/import), dashboard queries, and app creation. All tests use mocked model calls and temporary databases.
 
 ## Design Principles
 
@@ -382,4 +390,4 @@ python -m pytest tests/ -v
 
 ## Project
 
-APEX v1.2.0 — ~11,500 lines of Python across 51 source files, 126 tests, 11-tab interactive dashboard.
+APEX v1.2.0 — ~11,500 lines of Python across 51 source files, 141 tests, 11-tab interactive dashboard.

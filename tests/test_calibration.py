@@ -21,6 +21,8 @@ from apex.runner import ProbeRunner
 from apex.storage import ResultStore
 from apex.types import CalibrationBaseline, CalibrationPrompt, ChatResponse, ModelInfo
 
+import json
+
 
 # ---------------------------------------------------------------------------
 # Store tests (unit, no model)
@@ -710,3 +712,191 @@ class TestCalibratedRun:
         assert len(results) == 1
         assert results[0]["filler_type"] == "neutral"
         store.close()
+
+
+# ---------------------------------------------------------------------------
+# Export / Import tests
+# ---------------------------------------------------------------------------
+
+
+class TestCalibrateExportImport:
+    """Tests for CalibrationStore.export_json() and import_json()."""
+
+    def _seed_store(self, store: CalibrationStore) -> None:
+        """Populate a store with sample prompts and baselines."""
+        for probe_id, dim in [("F-001", "factual_recall"), ("A-001", "application")]:
+            store.write_prompt(CalibrationPrompt(
+                probe_id=probe_id, dimension=dim,
+                position_percent=0.5, context_length=4096, seed=42,
+                full_text=f"text for {probe_id}",
+                actual_token_count=100, target_position_tokens=50,
+                filler_ids_before="NF-001", filler_ids_after="NF-002",
+                probe_hash="ph1", content_hash=f"ch-{probe_id}",
+                generated_at="2025-01-01T00:00:00Z",
+            ))
+        for model in ["model-a", "model-b"]:
+            store.write_baseline(CalibrationBaseline(
+                probe_id="F-001", dimension="factual_recall",
+                model_id=model, baseline_type="bare",
+                score=0.85, score_method="exact_match",
+                justification="matched", raw_response="resp",
+                raw_test_response="test_resp", error=None,
+                timestamp="2025-01-01T00:00:00Z",
+            ))
+        store.write_baseline(CalibrationBaseline(
+            probe_id="A-001", dimension="application",
+            model_id="model-a", baseline_type="anchored",
+            score=0.70, score_method="programmatic",
+            justification="partial", raw_response="resp2",
+            raw_test_response="test_resp2", error=None,
+            timestamp="2025-01-01T00:00:00Z",
+        ))
+
+    def test_export_creates_valid_json(self, tmp_path):
+        """Exported file has correct envelope with format, version, counts."""
+        store = CalibrationStore(str(tmp_path / "cal.db"))
+        self._seed_store(store)
+        out = tmp_path / "export.json"
+        counts = store.export_json(out)
+        store.close()
+
+        data = json.loads(out.read_text())
+        assert data["format"] == "apex-calibration"
+        assert data["format_version"] == 1
+        assert data["apex_version"] == "1.2.0"
+        assert "exported_at" in data
+        assert data["counts"]["prompts"] == 2
+        assert data["counts"]["baselines"] == 3
+        assert counts == {"prompts": 2, "baselines": 3}
+
+    def test_export_excludes_id(self, tmp_path):
+        """No 'id' key in exported prompt or baseline rows."""
+        store = CalibrationStore(str(tmp_path / "cal.db"))
+        self._seed_store(store)
+        out = tmp_path / "export.json"
+        store.export_json(out)
+        store.close()
+
+        data = json.loads(out.read_text())
+        for row in data["prompts"]:
+            assert "id" not in row
+        for row in data["baselines"]:
+            assert "id" not in row
+
+    def test_export_with_model_filter(self, tmp_path):
+        """model_id filter narrows baselines but not prompts."""
+        store = CalibrationStore(str(tmp_path / "cal.db"))
+        self._seed_store(store)
+        out = tmp_path / "export.json"
+        counts = store.export_json(out, model_id="model-a")
+        store.close()
+
+        data = json.loads(out.read_text())
+        # Prompts unaffected by model filter
+        assert data["counts"]["prompts"] == 2
+        # Only model-a baselines (2: bare F-001 + anchored A-001)
+        assert data["counts"]["baselines"] == 2
+        assert all(b["model_id"] == "model-a" for b in data["baselines"])
+        assert counts == {"prompts": 2, "baselines": 2}
+
+    def test_export_with_dimension_filter(self, tmp_path):
+        """dimension filter narrows both prompts and baselines."""
+        store = CalibrationStore(str(tmp_path / "cal.db"))
+        self._seed_store(store)
+        out = tmp_path / "export.json"
+        counts = store.export_json(out, dimension="factual_recall")
+        store.close()
+
+        data = json.loads(out.read_text())
+        assert data["counts"]["prompts"] == 1
+        assert data["prompts"][0]["dimension"] == "factual_recall"
+        # Only baselines with factual_recall dimension (2: model-a bare + model-b bare)
+        assert data["counts"]["baselines"] == 2
+        assert all(b["dimension"] == "factual_recall" for b in data["baselines"])
+        assert counts == {"prompts": 1, "baselines": 2}
+
+    def test_import_roundtrip(self, tmp_path):
+        """Export from DB A, import to DB B — data matches."""
+        store_a = CalibrationStore(str(tmp_path / "a.db"))
+        self._seed_store(store_a)
+        out = tmp_path / "export.json"
+        store_a.export_json(out)
+        store_a.close()
+
+        store_b = CalibrationStore(str(tmp_path / "b.db"))
+        counts = store_b.import_json(out)
+        assert counts == {"prompts": 2, "baselines": 3}
+
+        assert store_b.count_prompts() == 2
+        assert store_b.count_baselines() == 3
+
+        prompts_b = store_b.get_prompts()
+        assert prompts_b[0]["probe_id"] in ("F-001", "A-001")
+        store_b.close()
+
+    def test_import_idempotent(self, tmp_path):
+        """Importing same file twice doesn't duplicate records."""
+        store_a = CalibrationStore(str(tmp_path / "a.db"))
+        self._seed_store(store_a)
+        out = tmp_path / "export.json"
+        store_a.export_json(out)
+        store_a.close()
+
+        store_b = CalibrationStore(str(tmp_path / "b.db"))
+        store_b.import_json(out)
+        store_b.import_json(out)  # second import
+
+        assert store_b.count_prompts() == 2
+        assert store_b.count_baselines() == 3
+        store_b.close()
+
+    def test_import_invalid_format(self, tmp_path):
+        """Rejects JSON with wrong format field."""
+        bad = tmp_path / "bad.json"
+        bad.write_text(json.dumps({"format": "wrong", "format_version": 1}))
+
+        store = CalibrationStore(str(tmp_path / "cal.db"))
+        with pytest.raises(ValueError, match="Invalid format"):
+            store.import_json(bad)
+        store.close()
+
+    def test_import_invalid_version(self, tmp_path):
+        """Rejects unsupported format_version."""
+        bad = tmp_path / "bad.json"
+        bad.write_text(json.dumps({"format": "apex-calibration", "format_version": 99}))
+
+        store = CalibrationStore(str(tmp_path / "cal.db"))
+        with pytest.raises(ValueError, match="Unsupported format_version"):
+            store.import_json(bad)
+        store.close()
+
+    def test_import_missing_file(self, tmp_path):
+        """Raises FileNotFoundError for nonexistent file."""
+        store = CalibrationStore(str(tmp_path / "cal.db"))
+        with pytest.raises(FileNotFoundError):
+            store.import_json(tmp_path / "nonexistent.json")
+        store.close()
+
+    def test_cli_export_import_roundtrip(self, tmp_path, monkeypatch):
+        """CLI export then import roundtrip."""
+        monkeypatch.delenv("APEX_DATABASE_URL", raising=False)
+        db_a = str(tmp_path / "a.db")
+        db_b = str(tmp_path / "b.db")
+        out = str(tmp_path / "cal.json")
+
+        # Seed source DB
+        store = CalibrationStore(db_a)
+        self._seed_store(store)
+        store.close()
+
+        # Export via CLI
+        main(["calibrate", "export", "--db", db_a, "-o", out])
+        assert (tmp_path / "cal.json").exists()
+
+        # Import via CLI
+        main(["calibrate", "import", out, "--db", db_b])
+
+        store_b = CalibrationStore(db_b)
+        assert store_b.count_prompts() == 2
+        assert store_b.count_baselines() == 3
+        store_b.close()

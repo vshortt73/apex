@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -484,6 +485,49 @@ def cmd_calibrate_baseline(args: argparse.Namespace) -> None:
     store.close()
 
 
+def cmd_calibrate_export(args: argparse.Namespace) -> None:
+    from apex.calibration_store import CalibrationStore
+
+    dsn = _resolve_dsn(args.db)
+    store = CalibrationStore(dsn)
+
+    counts = store.export_json(
+        output_path=args.output,
+        model_id=getattr(args, "model", None),
+        dimension=getattr(args, "dimension", None),
+        baseline_type=getattr(args, "type", None),
+    )
+    store.close()
+
+    print(f"Exported calibration data to {args.output}")
+    print(f"  Prompts:   {counts['prompts']}")
+    print(f"  Baselines: {counts['baselines']}")
+
+
+def cmd_calibrate_import(args: argparse.Namespace) -> None:
+    from apex.calibration_store import CalibrationStore
+
+    dsn = _resolve_dsn(args.db)
+
+    try:
+        store = CalibrationStore(dsn)
+        counts = store.import_json(args.input)
+        store.close()
+    except FileNotFoundError:
+        print(f"Error: file not found: {args.input}", file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f"Error: invalid JSON: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Imported calibration data from {args.input}")
+    print(f"  Prompts:   {counts['prompts']}")
+    print(f"  Baselines: {counts['baselines']}")
+
+
 def cmd_validate(args: argparse.Namespace) -> None:
     from apex.config import load_config
     from apex.libraries import ProbeLibrary
@@ -602,7 +646,7 @@ def main(argv: list[str] | None = None) -> None:
     p_migrate.set_defaults(func=cmd_migrate)
 
     # calibrate (nested subcommands)
-    p_cal = subparsers.add_parser("calibrate", help="Calibration subsystem: generate, validate, baseline")
+    p_cal = subparsers.add_parser("calibrate", help="Calibration subsystem: generate, validate, baseline, export, import")
     cal_sub = p_cal.add_subparsers(dest="cal_command", required=True)
 
     # calibrate generate
@@ -633,6 +677,21 @@ def main(argv: list[str] | None = None) -> None:
     p_cal_base.add_argument("--probe-ids", nargs="+", help="Specific probe IDs to baseline")
     p_cal_base.add_argument("--force", action="store_true", help="Delete existing baselines before running")
     p_cal_base.set_defaults(func=cmd_calibrate_baseline)
+
+    # calibrate export
+    p_cal_exp = cal_sub.add_parser("export", help="Export calibration data to JSON")
+    p_cal_exp.add_argument("--db", default="results.db", help="Database path or PostgreSQL DSN")
+    p_cal_exp.add_argument("-o", "--output", default="calibration.json", help="Output file (default: calibration.json)")
+    p_cal_exp.add_argument("--model", help="Filter baselines by model ID")
+    p_cal_exp.add_argument("--dimension", help="Filter by dimension")
+    p_cal_exp.add_argument("--type", choices=["bare", "anchored"], help="Filter baselines by type")
+    p_cal_exp.set_defaults(func=cmd_calibrate_export)
+
+    # calibrate import
+    p_cal_imp = cal_sub.add_parser("import", help="Import calibration data from JSON")
+    p_cal_imp.add_argument("input", help="Path to calibration JSON file")
+    p_cal_imp.add_argument("--db", default="results.db", help="Target database path or PostgreSQL DSN")
+    p_cal_imp.set_defaults(func=cmd_calibrate_import)
 
     # validate
     p_validate = subparsers.add_parser("validate", help="Validate config and libraries")

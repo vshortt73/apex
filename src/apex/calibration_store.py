@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
+from apex import __version__
 from apex.db import (
     CALIBRATION_BASELINE_COLUMN_NAMES,
     CALIBRATION_PROMPT_COLUMN_NAMES,
@@ -174,6 +177,90 @@ class CalibrationStore:
         if bare is None or anchored is None or bare == 0.0:
             return None
         return anchored / bare
+
+    def export_json(
+        self,
+        output_path: str | Path,
+        model_id: str | None = None,
+        probe_id: str | None = None,
+        baseline_type: str | None = None,
+        dimension: str | None = None,
+    ) -> dict[str, int]:
+        """Export calibration data to a portable JSON file.
+
+        Returns dict with counts: ``{"prompts": N, "baselines": N}``.
+        """
+        prompts = self.get_prompts(probe_id=probe_id)
+        baselines = self.get_baselines(
+            model_id=model_id, probe_id=probe_id, baseline_type=baseline_type,
+        )
+
+        if dimension:
+            prompts = [p for p in prompts if p.get("dimension") == dimension]
+            baselines = [b for b in baselines if b.get("dimension") == dimension]
+
+        # Strip auto-increment id — not portable across databases
+        for row in prompts:
+            row.pop("id", None)
+        for row in baselines:
+            row.pop("id", None)
+
+        envelope = {
+            "format": "apex-calibration",
+            "format_version": 1,
+            "apex_version": __version__,
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "filters": {
+                "model_id": model_id,
+                "probe_id": probe_id,
+                "baseline_type": baseline_type,
+                "dimension": dimension,
+            },
+            "counts": {
+                "prompts": len(prompts),
+                "baselines": len(baselines),
+            },
+            "prompts": prompts,
+            "baselines": baselines,
+        }
+
+        Path(output_path).write_text(json.dumps(envelope, indent=2, default=str))
+        return {"prompts": len(prompts), "baselines": len(baselines)}
+
+    def import_json(self, input_path: str | Path) -> dict[str, int]:
+        """Import calibration data from a JSON file.
+
+        Uses upsert semantics so importing the same file twice is idempotent.
+        Returns dict with counts: ``{"prompts": N, "baselines": N}``.
+        """
+        data = json.loads(Path(input_path).read_text())
+
+        if data.get("format") != "apex-calibration":
+            raise ValueError(
+                f"Invalid format: expected 'apex-calibration', "
+                f"got {data.get('format')!r}"
+            )
+        if data.get("format_version") != 1:
+            raise ValueError(
+                f"Unsupported format_version: expected 1, "
+                f"got {data.get('format_version')!r}"
+            )
+
+        # Import prompts
+        prompt_rows = data.get("prompts", [])
+        prompts = []
+        for row in prompt_rows:
+            row.pop("id", None)
+            prompts.append(CalibrationPrompt(**row))
+        self.write_prompts(prompts)
+
+        # Import baselines
+        baseline_rows = data.get("baselines", [])
+        for row in baseline_rows:
+            row.pop("id", None)
+            self.write_baseline(CalibrationBaseline(**row))
+
+        return {"prompts": len(prompts), "baselines": len(baseline_rows)}
 
     def close(self) -> None:
         self._backend.close()

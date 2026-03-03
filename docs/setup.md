@@ -479,6 +479,37 @@ python -m apex run run.yaml --calibrated
 # 6. Analyze — Calibration tab shows baseline decomposition and normalized curves
 ```
 
+### Export and import calibration data
+
+Calibration data (frozen prompts and baselines) can be exported to a portable JSON file for transfer between databases or machines. This is useful when deploying to a new server — instead of re-running calibration from scratch, export from the source and import into the target.
+
+```bash
+# Export all calibration data
+python -m apex calibrate export --db results.db -o calibration.json
+
+# Export with filters
+python -m apex calibrate export --db results.db -o calibration.json \
+  --model qwen2.5-7b \
+  --dimension factual_recall \
+  --type bare
+
+# Import into a new database (SQLite or PostgreSQL)
+python -m apex calibrate import calibration.json --db postgresql://user:pass@newhost/apex
+
+# Import is idempotent — safe to run multiple times
+python -m apex calibrate import calibration.json --db results.db
+```
+
+The JSON file is self-describing with format version, APEX version, export timestamp, and record counts. The `id` column (auto-increment primary key) is excluded since it's not portable across databases. Import uses upsert semantics, so re-importing the same file won't create duplicates.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--db` | `results.db` | Database path or PostgreSQL DSN |
+| `-o`, `--output` | `calibration.json` | Output file path (export only) |
+| `--model` | all | Filter baselines by model ID (export only) |
+| `--dimension` | all | Filter both prompts and baselines by dimension (export only) |
+| `--type` | all | Filter baselines by type: `bare` or `anchored` (export only) |
+
 ## Resume and Interruption
 
 APEX is designed for long overnight runs. If a run is interrupted (Ctrl+C, crash, power loss):
