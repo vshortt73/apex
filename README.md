@@ -110,7 +110,8 @@ src/apex/
 ### Installation
 
 ```bash
-cd /programs/apex
+git clone https://github.com/vshortt73/apex.git
+cd apex
 python3 -m venv .venv
 source .venv/bin/activate
 
@@ -123,6 +124,20 @@ pip install -e ".[dashboard]"
 # Development tools
 pip install -e ".[dev]"
 ```
+
+### Import existing calibration data (optional)
+
+If you have a `calibration.json` exported from another APEX installation, import it to skip the calibration steps:
+
+```bash
+# Into PostgreSQL
+python -m apex calibrate import calibration.json --db postgresql://user:pass@localhost:5432/apex
+
+# Or into SQLite (creates the file if it doesn't exist)
+python -m apex calibrate import calibration.json --db results.db
+```
+
+This loads frozen prompts and baselines with upsert semantics — safe to run multiple times. See the [Calibration](#calibration) section for generating calibration data from scratch.
 
 ### Minimal Test Run
 
