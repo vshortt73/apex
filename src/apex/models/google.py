@@ -14,6 +14,7 @@ class GoogleAdapter(ModelAdapter):
         model_name: str,
         api_key: str | None = None,
         temperature: float = 0.0,
+        max_tokens: int | None = None,
         **info_overrides,
     ) -> None:
         from google import genai
@@ -24,6 +25,7 @@ class GoogleAdapter(ModelAdapter):
         self._client = genai.Client(**kwargs)
         self._model = model_name
         self._temperature = temperature
+        self._max_tokens = max_tokens
         self._info_overrides = info_overrides
 
     def get_model_info(self) -> ModelInfo:
@@ -56,10 +58,13 @@ class GoogleAdapter(ModelAdapter):
                 role = "user" if m.role == "user" else "model"
                 contents.append(types.Content(role=role, parts=[types.Part(text=m.content)]))
 
-        config = types.GenerateContentConfig(
-            temperature=self._temperature,
-            system_instruction=system_text if system_text else None,
-        )
+        config_kwargs = {
+            "temperature": self._temperature,
+            "system_instruction": system_text if system_text else None,
+        }
+        if self._max_tokens is not None:
+            config_kwargs["max_output_tokens"] = self._max_tokens
+        config = types.GenerateContentConfig(**config_kwargs)
 
         start = time.monotonic()
         resp = self._client.models.generate_content(

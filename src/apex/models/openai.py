@@ -15,6 +15,7 @@ class OpenAIAdapter(ModelAdapter):
         api_key: str | None = None,
         base_url: str | None = None,
         temperature: float = 0.0,
+        max_tokens: int | None = None,
         **info_overrides,
     ) -> None:
         from openai import OpenAI
@@ -27,6 +28,7 @@ class OpenAIAdapter(ModelAdapter):
         self._client = OpenAI(**kwargs)
         self._model = model_name
         self._temperature = temperature
+        self._max_tokens = max_tokens
         self._info_overrides = info_overrides
 
     def get_model_info(self) -> ModelInfo:
@@ -49,11 +51,14 @@ class OpenAIAdapter(ModelAdapter):
 
     def chat(self, messages: list[ChatMessage]) -> ChatResponse:
         start = time.monotonic()
-        resp = self._client.chat.completions.create(
-            model=self._model,
-            messages=[{"role": m.role, "content": m.content} for m in messages],
-            temperature=self._temperature,
-        )
+        kwargs = {
+            "model": self._model,
+            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "temperature": self._temperature,
+        }
+        if self._max_tokens is not None:
+            kwargs["max_tokens"] = self._max_tokens
+        resp = self._client.chat.completions.create(**kwargs)
         latency = int((time.monotonic() - start) * 1000)
         choice = resp.choices[0]
         return ChatResponse(

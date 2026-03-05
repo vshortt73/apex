@@ -201,6 +201,32 @@ def layout(dashboard_config=None) -> html.Div:
                         value=["on"] if cfg.server_defaults.flash_attn else [],
                     ),
                 ], style={"flex": "1"}),
+                html.Div([
+                    html.Label("Reasoning Format", style=LABEL_STYLE),
+                    dcc.Dropdown(
+                        id="settings-srv-reasoning-format",
+                        options=[
+                            {"label": "None (disabled)", "value": "none"},
+                            {"label": "DeepSeek", "value": "deepseek"},
+                        ],
+                        value=cfg.server_defaults.reasoning_format,
+                        clearable=False,
+                        style={"width": "100%"},
+                    ),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Label("Reasoning Budget", style=LABEL_STYLE),
+                    dcc.Dropdown(
+                        id="settings-srv-reasoning-budget",
+                        options=[
+                            {"label": "Disabled (0)", "value": 0},
+                            {"label": "Unlimited (-1)", "value": -1},
+                        ],
+                        value=cfg.server_defaults.reasoning_budget,
+                        clearable=False,
+                        style={"width": "100%"},
+                    ),
+                ], style={"flex": "1"}),
             ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}),
         ], style=CARD_STYLE),
 
@@ -232,6 +258,15 @@ def layout(dashboard_config=None) -> html.Div:
                         value=cfg.run_defaults.filler_type,
                         clearable=False,
                         style={"width": "100%"},
+                    ),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Label("Max Tokens", style=LABEL_STYLE),
+                    dcc.Input(
+                        id="settings-run-max-tokens", type="number",
+                        value=cfg.run_defaults.max_tokens,
+                        min=1,
+                        style=_INPUT_STYLE,
                     ),
                 ], style={"flex": "1"}),
             ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}),
@@ -430,10 +465,13 @@ def register_callbacks(app, dashboard_config=None):
         State("settings-srv-parallel", "value"),
         State("settings-srv-threads", "value"),
         State("settings-srv-flash-attn", "value"),
+        State("settings-srv-reasoning-format", "value"),
+        State("settings-srv-reasoning-budget", "value"),
         State("settings-run-seed", "value"),
         State("settings-run-temperature", "value"),
         State("settings-run-repetitions", "value"),
         State("settings-run-filler-type", "value"),
+        State("settings-run-max-tokens", "value"),
         prevent_initial_call=True,
     )
     def save_config(
@@ -443,7 +481,8 @@ def register_callbacks(app, dashboard_config=None):
         db_url,
         be_llamacpp, be_ollama, be_sglang,
         srv_port, srv_ctx, srv_gpu, srv_parallel, srv_threads, srv_flash,
-        run_seed, run_temp, run_reps, run_filler,
+        srv_reasoning_format, srv_reasoning_budget,
+        run_seed, run_temp, run_reps, run_filler, run_max_tokens,
     ):
         try:
             existing = DashboardConfig.load(_CONFIG_PATH)
@@ -479,12 +518,15 @@ def register_callbacks(app, dashboard_config=None):
             parallel=int(srv_parallel or existing.server_defaults.parallel),
             flash_attn=bool(srv_flash and "on" in srv_flash),
             threads=int(srv_threads or existing.server_defaults.threads),
+            reasoning_format=srv_reasoning_format or existing.server_defaults.reasoning_format,
+            reasoning_budget=int(srv_reasoning_budget) if srv_reasoning_budget is not None else existing.server_defaults.reasoning_budget,
         )
         existing.run_defaults = RunDefaults(
             seed=int(run_seed or existing.run_defaults.seed),
             temperature=float(run_temp if run_temp is not None else existing.run_defaults.temperature),
             repetitions=int(run_reps or existing.run_defaults.repetitions),
             filler_type=run_filler or existing.run_defaults.filler_type,
+            max_tokens=int(run_max_tokens) if run_max_tokens is not None else existing.run_defaults.max_tokens,
         )
 
         try:
@@ -514,3 +556,4 @@ def register_callbacks(app, dashboard_config=None):
                 ),
                 current_version or 0,
             )
+

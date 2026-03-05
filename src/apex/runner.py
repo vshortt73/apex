@@ -101,12 +101,14 @@ class ProbeRunner:
 
     def _make_adapter(self, model_cfg: ModelConfig) -> ModelAdapter:
         """Create a ModelAdapter for the given config."""
+        max_tokens = model_cfg.max_tokens or self.config.max_tokens
         return get_adapter(
             backend=model_cfg.backend,
             model_name=model_cfg.model_name,
             base_url=model_cfg.base_url,
             api_key=model_cfg.api_key,
             temperature=self.config.temperature,
+            max_tokens=max_tokens,
             model_info_overrides={
                 "model_id": model_cfg.name,
                 "architecture": model_cfg.architecture,
@@ -209,7 +211,7 @@ class ProbeRunner:
             # Sequential path — zero overhead, same behavior as before
             for probe, query, pos, ctx_len, run_num, frozen in tqdm(queue, desc=model_info.model_id):
                 self._execute_probe(
-                    adapter, model_info, assembler, dispatcher,
+                    adapter, model_info, model_cfg, assembler, dispatcher,
                     probe, query, pos, ctx_len, run_num,
                     frozen_prompt=frozen,
                 )
@@ -218,6 +220,12 @@ class ProbeRunner:
             self._run_model_parallel(
                 model_cfg, model_info, assembler, queue,
             )
+
+    def _system_message(self, model_cfg: ModelConfig) -> str:
+        """Build system message, appending /no_think for reasoning models."""
+        if model_cfg.no_think:
+            return SYSTEM_MESSAGE + " /no_think"
+        return SYSTEM_MESSAGE
 
     def _run_model_parallel(
         self,
@@ -245,7 +253,7 @@ class ProbeRunner:
             probe, query, pos, ctx_len, run_num, frozen = item
             adapter, store, dispatcher = _get_thread_resources()
             self._execute_probe(
-                adapter, model_info, assembler, dispatcher,
+                adapter, model_info, model_cfg, assembler, dispatcher,
                 probe, query, pos, ctx_len, run_num,
                 store=store,
                 frozen_prompt=frozen,
@@ -269,6 +277,7 @@ class ProbeRunner:
         self,
         adapter: ModelAdapter,
         model_info: ModelInfo,
+        model_cfg: ModelConfig,
         assembler: PromptAssembler,
         dispatcher: ScoringDispatcher,
         probe,
@@ -302,10 +311,11 @@ class ProbeRunner:
             filler_type = self.config.filler_type
 
         # Turn 1: Send filler+probe
+        sys_msg = self._system_message(model_cfg)
         refused = False
         try:
             turn1_response = self._call_with_retry(
-                adapter.single_turn, SYSTEM_MESSAGE, full_text
+                adapter.single_turn, sys_msg, full_text
             )
         except Exception as e:
             logger.error("Turn 1 failed for %s at %.0f%%: %s", probe.probe_id, position_percent * 100, e)
@@ -319,7 +329,7 @@ class ProbeRunner:
         turn2_response = ChatResponse(content="", latency_ms=0)
         if not refused:
             messages = [
-                ChatMessage(role="system", content=SYSTEM_MESSAGE),
+                ChatMessage(role="system", content=sys_msg),
                 ChatMessage(role="user", content=full_text),
                 ChatMessage(role="assistant", content=turn1_response.content),
                 ChatMessage(role="user", content=query.query),

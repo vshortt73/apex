@@ -201,6 +201,15 @@ def layout(dashboard_config=None) -> html.Div:
                         style={"width": "100%"},
                     ),
                 ], style={"flex": "1"}),
+                html.Div([
+                    html.Label("Max Tokens", style=LABEL_STYLE),
+                    html.Div(
+                        id="runctl-max-tokens-display",
+                        children=str(cfg.run_defaults.max_tokens),
+                        style={**_INPUT_STYLE, "padding": "8px", "opacity": "0.8"},
+                    ),
+                    html.P("Set in Settings tab", style={"fontSize": "10px", "color": "#888", "margin": "2px 0 0 0"}),
+                ], style={"flex": "1"}),
             ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}),
             html.Div([
                 dcc.Checklist(
@@ -208,6 +217,12 @@ def layout(dashboard_config=None) -> html.Div:
                     options=[{"label": " Use calibrated prompts (frozen)", "value": "calibrated"}],
                     value=[],
                     style={"fontSize": "13px", "marginTop": "12px"},
+                ),
+                dcc.Checklist(
+                    id="runctl-no-think",
+                    options=[{"label": " Suppress reasoning (no_think — for Qwen3, DeepSeek-R1, etc.)", "value": "on"}],
+                    value=[],
+                    style={"fontSize": "13px", "marginTop": "6px"},
                 ),
             ]),
         ], style=CARD_STYLE),
@@ -676,11 +691,12 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         State("runctl-repetitions", "value"),
         State("runctl-filler-type", "value"),
         State("runctl-calibrated", "value"),
+        State("runctl-no-think", "value"),
         prevent_initial_call=True,
     )
     def launch_run(n_clicks, models, evaluator_models, probe_mode, positions_str,
                    ctx_checked, ctx_custom, seed, temperature, repetitions, filler_type,
-                   calibrated_opts):
+                   calibrated_opts, no_think_opts):
         if not models:
             return html.Span("Add at least one model first.", style={"color": WONG["orange"]})
 
@@ -718,6 +734,11 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         workers = min(m.get("n_slots", 1) for m in models) if models else 1
 
         use_calibration = "calibrated" in (calibrated_opts or [])
+        no_think = "on" in (no_think_opts or [])
+
+        # Apply no_think to all models if checked
+        if no_think:
+            models = [{**m, "no_think": True} for m in models]
 
         # Build config dict matching YAML structure
         run_section = {
@@ -727,6 +748,7 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
             "filler_type": filler_type or "neutral",
             "workers": workers,
         }
+        run_section["max_tokens"] = cfg.run_defaults.max_tokens
         if use_calibration:
             run_section["use_calibration"] = True
         config = {
@@ -1058,6 +1080,7 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
         Output("runctl-temperature", "value"),
         Output("runctl-repetitions", "value"),
         Output("runctl-filler-type", "value"),
+        Output("runctl-max-tokens-display", "children"),
         Input("config-version", "data"),
         prevent_initial_call=True,
     )
@@ -1067,6 +1090,7 @@ def register_callbacks(app, qm, process_manager, dashboard_config=None):
             cfg.run_defaults.temperature,
             cfg.run_defaults.repetitions,
             cfg.run_defaults.filler_type,
+            str(cfg.run_defaults.max_tokens),
         )
 
 

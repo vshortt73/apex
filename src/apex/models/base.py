@@ -32,6 +32,7 @@ def get_adapter(
     base_url: str | None = None,
     api_key: str | None = None,
     temperature: float = 0.0,
+    max_tokens: int | None = None,
     model_info_overrides: dict | None = None,
 ) -> ModelAdapter:
     """Factory: create the right adapter for a backend string."""
@@ -44,6 +45,7 @@ def get_adapter(
             model_name=model_name,
             base_url=base_url or "http://localhost:11434",
             temperature=temperature,
+            max_tokens=max_tokens,
             **overrides,
         )
     elif backend == "llamacpp":
@@ -53,6 +55,7 @@ def get_adapter(
             model_name=model_name,
             base_url=base_url or "http://localhost:8080",
             temperature=temperature,
+            max_tokens=max_tokens,
             **overrides,
         )
     elif backend == "sglang":
@@ -62,6 +65,7 @@ def get_adapter(
             model_name=model_name,
             base_url=base_url or "http://localhost:30000",
             temperature=temperature,
+            max_tokens=max_tokens,
             **overrides,
         )
     elif backend == "openai":
@@ -72,6 +76,7 @@ def get_adapter(
             api_key=api_key,
             base_url=base_url,
             temperature=temperature,
+            max_tokens=max_tokens,
             **overrides,
         )
     elif backend == "anthropic":
@@ -81,6 +86,7 @@ def get_adapter(
             model_name=model_name,
             api_key=api_key,
             temperature=temperature,
+            max_tokens=max_tokens,
             **overrides,
         )
     elif backend == "google":
@@ -90,6 +96,7 @@ def get_adapter(
             model_name=model_name,
             api_key=api_key,
             temperature=temperature,
+            max_tokens=max_tokens,
             **overrides,
         )
     else:

@@ -548,10 +548,11 @@ def register_callbacks(app, qm, pm=None):
         Input("monitor-interval", "n_intervals"),
     )
     def update_error_tracker(_n):
-        df = qm.get_recent_errors(limit=10)
+        latest_uuid = qm.get_latest_run_uuid()
+        df = qm.get_recent_errors(limit=10, run_uuid=latest_uuid)
 
-        # Also get summary for counts
-        summary = qm.get_run_summary()
+        # Also get summary for counts — scoped to current run
+        summary = qm.get_run_summary(run_uuid=latest_uuid)
         refused_total = int(summary["refused_count"].sum()) if not summary.empty else 0
         null_total = int(summary["null_score_count"].sum()) if not summary.empty else 0
 

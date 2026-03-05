@@ -54,6 +54,8 @@ class ServerDefaults:
     parallel: int = 1
     flash_attn: bool = True
     threads: int = 0
+    reasoning_format: str = "none"
+    reasoning_budget: int = -1
 
 
 @dataclass
@@ -62,6 +64,7 @@ class RunDefaults:
     temperature: float = 0.0
     repetitions: int = 1
     filler_type: str = "neutral"
+    max_tokens: int = 512
 
 
 @dataclass
@@ -143,6 +146,8 @@ def _from_dict(data: dict) -> DashboardConfig:
         parallel=sd.get("parallel", 1),
         flash_attn=sd.get("flash_attn", True),
         threads=sd.get("threads", 0),
+        reasoning_format=sd.get("reasoning_format", "none"),
+        reasoning_budget=sd.get("reasoning_budget", -1),
     )
 
     rd = data.get("run_defaults", {})
@@ -151,6 +156,7 @@ def _from_dict(data: dict) -> DashboardConfig:
         temperature=rd.get("temperature", 0.0),
         repetitions=rd.get("repetitions", 1),
         filler_type=rd.get("filler_type", "neutral"),
+        max_tokens=rd.get("max_tokens", 512),
     )
 
     return DashboardConfig(
@@ -194,12 +200,15 @@ def _to_dict(cfg: DashboardConfig) -> dict:
             "parallel": cfg.server_defaults.parallel,
             "flash_attn": cfg.server_defaults.flash_attn,
             "threads": cfg.server_defaults.threads,
+            "reasoning_format": cfg.server_defaults.reasoning_format,
+            "reasoning_budget": cfg.server_defaults.reasoning_budget,
         },
         "run_defaults": {
             "seed": cfg.run_defaults.seed,
             "temperature": cfg.run_defaults.temperature,
             "repetitions": cfg.run_defaults.repetitions,
             "filler_type": cfg.run_defaults.filler_type,
+            "max_tokens": cfg.run_defaults.max_tokens,
         },
     }
 

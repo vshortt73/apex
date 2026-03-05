@@ -14,6 +14,7 @@ class AnthropicAdapter(ModelAdapter):
         model_name: str,
         api_key: str | None = None,
         temperature: float = 0.0,
+        max_tokens: int | None = None,
         **info_overrides,
     ) -> None:
         from anthropic import Anthropic
@@ -24,6 +25,7 @@ class AnthropicAdapter(ModelAdapter):
         self._client = Anthropic(**kwargs)
         self._model = model_name
         self._temperature = temperature
+        self._max_tokens = max_tokens or 4096
         self._info_overrides = info_overrides
 
     def get_model_info(self) -> ModelInfo:
@@ -42,7 +44,7 @@ class AnthropicAdapter(ModelAdapter):
         start = time.monotonic()
         resp = self._client.messages.create(
             model=self._model,
-            max_tokens=4096,
+            max_tokens=self._max_tokens,
             system=system,
             messages=[{"role": "user", "content": user}],
             temperature=self._temperature,
@@ -68,7 +70,7 @@ class AnthropicAdapter(ModelAdapter):
         start = time.monotonic()
         resp = self._client.messages.create(
             model=self._model,
-            max_tokens=4096,
+            max_tokens=self._max_tokens,
             system=system if system else "You are a helpful assistant.",
             messages=chat_msgs,
             temperature=self._temperature,

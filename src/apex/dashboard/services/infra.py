@@ -198,6 +198,8 @@ def start_server(
     threads: int | None = None,
     parallel: int = 1,
     gpu_layers: int = 999,
+    reasoning_format: str = "none",
+    reasoning_budget: int | None = None,
     llama_server_bin: str = "",
     remote_host: str = "",
 ) -> ServerInfo | None:
@@ -223,6 +225,10 @@ def start_server(
         "--parallel", str(parallel),
     ]
     args.extend(["--flash-attn", "on" if flash_attn else "off"])
+    if reasoning_format:
+        args.extend(["--reasoning-format", reasoning_format])
+    if reasoning_budget is not None:
+        args.extend(["--reasoning-budget", str(reasoning_budget)])
     if threads:
         args.extend(["-t", str(threads)])
 

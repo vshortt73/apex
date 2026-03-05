@@ -153,21 +153,27 @@ class QueryManager:
     # Summary
     # ------------------------------------------------------------------
 
-    def get_run_summary(self) -> pd.DataFrame:
+    def get_run_summary(self, run_uuid: str | None = None) -> pd.DataFrame:
         """One row per model with result count, timestamp range, refusal count."""
         conn = self._connect()
         try:
+            where = ""
+            params: tuple = ()
+            if run_uuid:
+                where = f" WHERE run_uuid = {self._ph}"
+                params = (run_uuid,)
             return self._query_df(
-                """SELECT model_id, model_architecture, model_parameters, quantization,
+                f"""SELECT model_id, model_architecture, model_parameters, quantization,
                           COUNT(*) AS result_count,
                           SUM(CASE WHEN refused = 1 THEN 1 ELSE 0 END) AS refused_count,
                           SUM(CASE WHEN score IS NULL THEN 1 ELSE 0 END) AS null_score_count,
                           MIN(timestamp) AS first_timestamp,
                           MAX(timestamp) AS last_timestamp
-                   FROM probe_results
+                   FROM probe_results{where}
                    GROUP BY model_id, model_architecture, model_parameters, quantization
                    ORDER BY model_id""",
                 conn,
+                params=params,
             )
         finally:
             self._release(conn)
@@ -473,21 +479,27 @@ class QueryManager:
         finally:
             self._release(conn)
 
-    def get_recent_errors(self, limit: int = 10) -> pd.DataFrame:
+    def get_recent_errors(self, limit: int = 10, run_uuid: str | None = None) -> pd.DataFrame:
         """Recent refused or null-score results with response snippet."""
         conn = self._connect()
         try:
+            conditions = ["(refused = 1 OR score IS NULL)"]
+            params: list = []
+            if run_uuid:
+                conditions.append(f"run_uuid = {self._ph}")
+                params.append(run_uuid)
+            where = " WHERE " + " AND ".join(conditions)
+            params.append(limit)
             return self._query_df(
                 f"""SELECT timestamp, model_id, probe_id, dimension,
                           target_position_percent * 100 AS target_position_percent,
                           context_length, score, refused,
                           SUBSTR(raw_response, 1, 200) AS response_snippet
-                   FROM probe_results
-                   WHERE refused = 1 OR score IS NULL
+                   FROM probe_results{where}
                    ORDER BY timestamp DESC
                    LIMIT {self._ph}""",
                 conn,
-                params=(limit,),
+                params=tuple(params),
             )
         finally:
             self._release(conn)
@@ -495,6 +507,17 @@ class QueryManager:
     # ------------------------------------------------------------------
     # Run UUID management
     # ------------------------------------------------------------------
+
+    def get_latest_run_uuid(self) -> str | None:
+        """Return the run_uuid of the most recent result, or None."""
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT run_uuid FROM probe_results ORDER BY timestamp DESC LIMIT 1"
+            ).fetchone()
+            return row[0] if row else None
+        finally:
+            self._release(conn)
 
     def get_run_uuids(self) -> pd.DataFrame:
         """Distinct run UUIDs with model, count, timestamp range."""

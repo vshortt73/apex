@@ -124,6 +124,32 @@ def layout(dashboard_config=None) -> html.Div:
                             style={"paddingTop": "4px"},
                         ),
                     ], style={"flex": "1"}),
+                    html.Div([
+                        html.Label("Reasoning Format", style=LABEL_STYLE),
+                        dcc.Dropdown(
+                            id="infra-reasoning-format",
+                            options=[
+                                {"label": "None (disabled)", "value": "none"},
+                                {"label": "DeepSeek", "value": "deepseek"},
+                            ],
+                            value=cfg.server_defaults.reasoning_format,
+                            clearable=False,
+                            style={"width": "100%"},
+                        ),
+                    ], style={"flex": "1"}),
+                    html.Div([
+                        html.Label("Reasoning Budget", style=LABEL_STYLE),
+                        dcc.Dropdown(
+                            id="infra-reasoning-budget",
+                            options=[
+                                {"label": "Disabled (0)", "value": 0},
+                                {"label": "Unlimited (-1)", "value": -1},
+                            ],
+                            value=cfg.server_defaults.reasoning_budget,
+                            clearable=False,
+                            style={"width": "100%"},
+                        ),
+                    ], style={"flex": "1"}),
                 ], style={"display": "flex", "gap": "12px", "marginBottom": "12px", "flexWrap": "wrap"}),
 
                 # Aggregate context display
@@ -396,9 +422,11 @@ def register_callbacks(app, qm, dashboard_config=None):
         State("infra-parallel", "value"),
         State("infra-threads", "value"),
         State("infra-flash-attn", "value"),
+        State("infra-reasoning-format", "value"),
+        State("infra-reasoning-budget", "value"),
         prevent_initial_call=True,
     )
-    def start_server(n_clicks, node, model_path, port, ctx_size, gpu_layers, parallel, threads, flash_attn):
+    def start_server(n_clicks, node, model_path, port, ctx_size, gpu_layers, parallel, threads, flash_attn, reasoning_format, reasoning_budget):
         if not model_path:
             return html.Span("Select a model file first.", style={"color": WONG["orange"]})
         if not port:
@@ -411,6 +439,9 @@ def register_callbacks(app, qm, dashboard_config=None):
         ngl = int(gpu_layers or cfg.server_defaults.gpu_layers)
         thread_count = int(threads) if threads else None
 
+        reasoning_fmt = reasoning_format or cfg.server_defaults.reasoning_format
+        r_budget = int(reasoning_budget) if reasoning_budget is not None else cfg.server_defaults.reasoning_budget
+
         result = infra.start_server(
             node=node,
             model_path=model_path,
@@ -420,6 +451,8 @@ def register_callbacks(app, qm, dashboard_config=None):
             threads=thread_count,
             parallel=slots,
             gpu_layers=ngl,
+            reasoning_format=reasoning_fmt,
+            reasoning_budget=r_budget if r_budget == 0 else None,
             llama_server_bin=cfg.infra.llama_server_bin,
             remote_host=_resolve_host(node) if _resolve_host(node) != "local" else "",
         )

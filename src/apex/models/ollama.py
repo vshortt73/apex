@@ -16,11 +16,13 @@ class OllamaAdapter(ModelAdapter):
         model_name: str,
         base_url: str = "http://localhost:11434",
         temperature: float = 0.0,
+        max_tokens: int | None = None,
         **info_overrides,
     ) -> None:
         self._model = model_name
         self._base_url = base_url.rstrip("/")
         self._temperature = temperature
+        self._max_tokens = max_tokens
         self._info_overrides = info_overrides
         self._client = httpx.Client(base_url=self._base_url, timeout=600.0)
 
@@ -49,6 +51,8 @@ class OllamaAdapter(ModelAdapter):
             "stream": False,
             "options": {"temperature": self._temperature},
         }
+        if self._max_tokens is not None:
+            payload["options"]["num_predict"] = self._max_tokens
         start = time.monotonic()
         resp = self._client.post("/api/chat", json=payload)
         latency = int((time.monotonic() - start) * 1000)
