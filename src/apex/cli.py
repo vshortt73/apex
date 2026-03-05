@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
 
 from apex import __version__
 
@@ -100,7 +101,8 @@ def cmd_dashboard(args: argparse.Namespace) -> None:
     if not dsn:
         # Fall back to dashboard config file
         from apex.dashboard.config import DashboardConfig
-        cfg = DashboardConfig.load("configs/dashboard.yaml")
+        _config_path = Path(__file__).resolve().parent.parent.parent / "configs" / "dashboard.yaml"
+        cfg = DashboardConfig.load(_config_path)
         dsn = cfg.resolve_database_url()
     app = create_app(dsn)
     print(f"APEX Dashboard — http://{args.host}:{args.port}/")

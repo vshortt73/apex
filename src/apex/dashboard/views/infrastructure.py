@@ -185,29 +185,23 @@ def register_callbacks(app, qm, dashboard_config=None):
         Input("infra-interval", "n_intervals"),
     )
     def update_gpu_stats(_n):
-        stats = infra.get_gpu_stats("local")
-        if not stats:
+        gpu_list = infra.get_gpu_stats("local")
+        if not gpu_list:
             return html.Div(
                 "GPU stats unavailable (nvidia-smi not found or failed)",
                 style={**CARD_STYLE, "color": TEXT_MUTED},
             )
 
-        vram_pct = round(stats.vram_used_mb / max(stats.vram_total_mb, 1) * 100, 1)
-        vram_color = WONG["green"] if vram_pct < 70 else (WONG["orange"] if vram_pct < 90 else WONG["vermillion"])
-        temp_color = WONG["green"] if stats.temperature_c < 70 else (WONG["orange"] if stats.temperature_c < 85 else WONG["vermillion"])
+        gpu_cards = []
+        for idx, stats in enumerate(gpu_list):
+            vram_pct = round(stats.vram_used_mb / max(stats.vram_total_mb, 1) * 100, 1)
+            vram_color = WONG["green"] if vram_pct < 70 else (WONG["orange"] if vram_pct < 90 else WONG["vermillion"])
+            temp_color = WONG["green"] if stats.temperature_c < 70 else (WONG["orange"] if stats.temperature_c < 85 else WONG["vermillion"])
 
-        proc_items = []
-        for p in stats.processes:
-            proc_items.append(html.Div(
-                f"PID {p['pid']}: {p['name']} — {p['vram_mb']} MB",
-                style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginLeft": "16px"},
-            ))
-
-        return html.Div([
-            html.H4("GPU Status — Node 1", style={"marginTop": "0", "marginBottom": "12px"}),
-            html.Div([
+            card_children = [
                 # GPU name and utilization
                 html.Div([
+                    html.Span(f"GPU {idx}: ", style={"fontWeight": "600", "color": TEXT_SECONDARY, "marginRight": "4px"}),
                     html.Span(stats.name, style={"fontWeight": "700", "marginRight": "16px"}),
                     html.Span(
                         f"{stats.utilization_pct}% util",
@@ -236,10 +230,21 @@ def register_callbacks(app, qm, dashboard_config=None):
                         style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginLeft": "8px", "whiteSpace": "nowrap"},
                     ),
                 ], style={"display": "flex", "alignItems": "center", "marginBottom": "8px"}),
+            ]
 
-                # GPU processes
-                *proc_items,
-            ]),
+            # GPU processes (shown on first card only)
+            if idx == 0 and stats.processes:
+                for p in stats.processes:
+                    card_children.append(html.Div(
+                        f"PID {p['pid']}: {p['name']} \u2014 {p['vram_mb']} MB",
+                        style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginLeft": "16px"},
+                    ))
+
+            gpu_cards.append(html.Div(card_children, style={"marginBottom": "12px"} if idx < len(gpu_list) - 1 else {}))
+
+        return html.Div([
+            html.H4("GPU Status \u2014 Node 1", style={"marginTop": "0", "marginBottom": "12px"}),
+            *gpu_cards,
         ], style=CARD_STYLE)
 
     # Server status cards

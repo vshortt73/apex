@@ -512,6 +512,61 @@ The JSON file is self-describing with format version, APEX version, export times
 | `--dimension` | all | Filter both prompts and baselines by dimension (export only) |
 | `--type` | all | Filter baselines by type: `bare` or `anchored` (export only) |
 
+## Dashboard Configuration
+
+The APEX dashboard resolves its database connection using a 4-level priority chain (highest wins):
+
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 (highest) | CLI argument | `python -m apex dashboard postgresql://user:pass@host/db` |
+| 2 | `APEX_DATABASE_URL` env var | `export APEX_DATABASE_URL="postgresql://..."` |
+| 3 | Config file | `configs/dashboard.yaml` |
+| 4 (lowest) | Built-in default | `postgresql://apex:apex@localhost:5432/apex` |
+
+### Config file: `configs/dashboard.yaml`
+
+The dashboard config file stores database URL, infrastructure paths, node definitions, and server defaults. It is loaded from `configs/dashboard.yaml` relative to the APEX project root.
+
+```yaml
+database:
+  url: "postgresql://apexuser:pass@localhost:5432/apex"
+
+infra:
+  llama_server_bin: "/programs/llama.cpp/build/bin/llama-server"
+  models_dir: "/programs/models"
+
+nodes:
+  - name: node1
+    host: local
+    label: "Node 1 (local)"
+    enabled: true
+
+backend_defaults:
+  llamacpp: "http://localhost:8080"
+  ollama: "http://localhost:11434"
+  sglang: "http://localhost:30000"
+
+server_defaults:
+  port: 8080
+  ctx_size: 8192
+  gpu_layers: 999
+  parallel: 1
+  flash_attn: true
+  threads: 0
+
+run_defaults:
+  seed: 42
+  temperature: 0.0
+  repetitions: 1
+  filler_type: neutral
+```
+
+### Settings tab
+
+The Settings tab in the dashboard provides a UI for editing all config file values. Changes are saved back to `configs/dashboard.yaml`. When a form field is left empty, the existing config value is preserved (it won't be overwritten with defaults).
+
+The Settings tab also provides auto-detection for llama-server binaries, model directories, and GPU information, plus connection tests for database and SSH nodes.
+
 ## Resume and Interruption
 
 APEX is designed for long overnight runs. If a run is interrupted (Ctrl+C, crash, power loss):

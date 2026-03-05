@@ -171,7 +171,7 @@ def register_callbacks(app, qm, pm=None):
     def update_system_bar(_n):
         from apex.dashboard.services.infra import get_gpu_stats, get_system_stats
 
-        gpu = get_gpu_stats()
+        gpu_list = get_gpu_stats()
         sys = get_system_stats()
 
         def _temp_color(temp_c: int | None) -> str:
@@ -204,25 +204,33 @@ def register_callbacks(app, qm, pm=None):
         _sep = {"borderLeft": f"1px solid {BORDER_COLOR}", "height": "28px", "margin": "0 16px"}
         items = []
 
-        # GPU section
-        if gpu:
+        # GPU section — aggregate for compact bar
+        if gpu_list:
+            gpu0 = gpu_list[0]
+            n_gpus = len(gpu_list)
+            gpu_label = gpu0.name if n_gpus == 1 else f"{gpu0.name} (x{n_gpus})"
+            max_util = max(g.utilization_pct for g in gpu_list)
+            max_temp = max(g.temperature_c for g in gpu_list)
+            total_vram_used = sum(g.vram_used_mb for g in gpu_list)
+            total_vram_total = sum(g.vram_total_mb for g in gpu_list)
+
             items.extend([
-                html.Span(gpu.name, style={"fontWeight": "700", "fontSize": "13px", "marginRight": "8px"}),
+                html.Span(gpu_label, style={"fontWeight": "700", "fontSize": "13px", "marginRight": "8px"}),
                 html.Span(
-                    f"{gpu.utilization_pct}%",
+                    f"{max_util}%",
                     style={"fontSize": "13px", "marginRight": "6px"},
                 ),
                 html.Span(
-                    f"{gpu.temperature_c}\u00b0C",
-                    style={"color": _temp_color(gpu.temperature_c), "fontSize": "13px"},
+                    f"{max_temp}\u00b0C",
+                    style={"color": _temp_color(max_temp), "fontSize": "13px"},
                 ),
                 html.Div(style=_sep),
                 # VRAM
                 html.Span("VRAM ", style={"fontSize": "12px", "color": TEXT_SECONDARY, "marginRight": "6px"}),
             ])
-            vram_pct = gpu.vram_used_mb / max(gpu.vram_total_mb, 1) * 100
-            vram_gb_used = gpu.vram_used_mb / 1024
-            vram_gb_total = gpu.vram_total_mb / 1024
+            vram_pct = total_vram_used / max(total_vram_total, 1) * 100
+            vram_gb_used = total_vram_used / 1024
+            vram_gb_total = total_vram_total / 1024
             items.extend([
                 _mini_bar(vram_pct, _usage_color(vram_pct)),
                 html.Span(

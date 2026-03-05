@@ -42,8 +42,8 @@ class ServerInfo:
     parallel: int | None = None
 
 
-def get_gpu_stats(node: str = "local") -> GpuStats | None:
-    """Parse nvidia-smi output for GPU stats. Returns None on failure."""
+def get_gpu_stats(node: str = "local") -> list[GpuStats]:
+    """Parse nvidia-smi output for GPU stats. Returns empty list on failure."""
     cmd = [
         "nvidia-smi",
         "--query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu",
@@ -70,11 +70,7 @@ def get_gpu_stats(node: str = "local") -> GpuStats | None:
             )
 
         if result.returncode != 0:
-            return None
-
-        parts = [p.strip() for p in result.stdout.strip().split(",")]
-        if len(parts) < 5:
-            return None
+            return []
 
         processes = []
         for line in proc_result.stdout.strip().splitlines():
@@ -86,16 +82,23 @@ def get_gpu_stats(node: str = "local") -> GpuStats | None:
                     "vram_mb": int(pparts[2]),
                 })
 
-        return GpuStats(
-            name=parts[0],
-            vram_used_mb=int(parts[1]),
-            vram_total_mb=int(parts[2]),
-            utilization_pct=int(parts[3]),
-            temperature_c=int(parts[4]),
-            processes=processes,
-        )
+        gpus = []
+        for line in result.stdout.strip().splitlines():
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) < 5:
+                continue
+            gpus.append(GpuStats(
+                name=parts[0],
+                vram_used_mb=int(parts[1]),
+                vram_total_mb=int(parts[2]),
+                utilization_pct=int(parts[3]),
+                temperature_c=int(parts[4]),
+                processes=processes if not gpus else [],  # attach processes to first GPU only
+            ))
+
+        return gpus
     except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
-        return None
+        return []
 
 
 def get_system_stats() -> SystemStats:

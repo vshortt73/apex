@@ -57,7 +57,7 @@ def layout(dashboard_config=None) -> html.Div:
                     dcc.Input(
                         id="settings-llama-bin", type="text",
                         value=cfg.infra.llama_server_bin,
-                        placeholder="/path/to/llama-server",
+                        placeholder="/usr/local/bin/llama-server",
                         style={**_INPUT_STYLE, "flex": "1"},
                     ),
                     html.Button("Test", id="settings-test-llama-btn", n_clicks=0, style=_TEST_BTN_STYLE),
@@ -275,6 +275,11 @@ def register_callbacks(app, dashboard_config=None):
             return html.Span("No path specified", style=_STATUS_ERR)
 
         p = Path(path)
+        if p.is_dir():
+            return html.Span(
+                "Path is a directory \u2014 provide the full path to the llama-server binary",
+                style=_STATUS_ERR,
+            )
         if not p.is_file():
             return html.Span("File not found", style=_STATUS_ERR)
 
@@ -440,6 +445,11 @@ def register_callbacks(app, dashboard_config=None):
         srv_port, srv_ctx, srv_gpu, srv_parallel, srv_threads, srv_flash,
         run_seed, run_temp, run_reps, run_filler,
     ):
+        try:
+            existing = DashboardConfig.load(_CONFIG_PATH)
+        except Exception:
+            existing = DashboardConfig()
+
         nodes = [
             NodeConfig(name="node1", host="local", label="Node 1 (local)", enabled=True),
         ]
@@ -451,45 +461,43 @@ def register_callbacks(app, dashboard_config=None):
                 enabled=bool(node2_enabled and "on" in node2_enabled),
             ))
 
-        new_cfg = DashboardConfig(
-            infra=InfraConfig(
-                llama_server_bin=llama_bin or "",
-                models_dir=models_dir or "",
-            ),
-            nodes=nodes,
-            database=DatabaseConfig(url=db_url or "postgresql://apex:apex@localhost:5432/apex"),
-            backend_defaults=BackendDefaults(
-                llamacpp=be_llamacpp or "http://localhost:8080",
-                ollama=be_ollama or "http://localhost:11434",
-                sglang=be_sglang or "http://localhost:30000",
-            ),
-            server_defaults=ServerDefaults(
-                port=int(srv_port or 8080),
-                ctx_size=int(srv_ctx or 8192),
-                gpu_layers=int(srv_gpu or 999),
-                parallel=int(srv_parallel or 1),
-                flash_attn=bool(srv_flash and "on" in srv_flash),
-                threads=int(srv_threads or 0),
-            ),
-            run_defaults=RunDefaults(
-                seed=int(run_seed or 42),
-                temperature=float(run_temp or 0.0),
-                repetitions=int(run_reps or 1),
-                filler_type=run_filler or "neutral",
-            ),
+        existing.infra = InfraConfig(
+            llama_server_bin=llama_bin or existing.infra.llama_server_bin,
+            models_dir=models_dir or existing.infra.models_dir,
+        )
+        existing.nodes = nodes
+        existing.database = DatabaseConfig(url=db_url or existing.database.url)
+        existing.backend_defaults = BackendDefaults(
+            llamacpp=be_llamacpp or existing.backend_defaults.llamacpp,
+            ollama=be_ollama or existing.backend_defaults.ollama,
+            sglang=be_sglang or existing.backend_defaults.sglang,
+        )
+        existing.server_defaults = ServerDefaults(
+            port=int(srv_port or existing.server_defaults.port),
+            ctx_size=int(srv_ctx or existing.server_defaults.ctx_size),
+            gpu_layers=int(srv_gpu or existing.server_defaults.gpu_layers),
+            parallel=int(srv_parallel or existing.server_defaults.parallel),
+            flash_attn=bool(srv_flash and "on" in srv_flash),
+            threads=int(srv_threads or existing.server_defaults.threads),
+        )
+        existing.run_defaults = RunDefaults(
+            seed=int(run_seed or existing.run_defaults.seed),
+            temperature=float(run_temp if run_temp is not None else existing.run_defaults.temperature),
+            repetitions=int(run_reps or existing.run_defaults.repetitions),
+            filler_type=run_filler or existing.run_defaults.filler_type,
         )
 
         try:
-            new_cfg.save(_CONFIG_PATH)
+            existing.save(_CONFIG_PATH)
 
             # Update the in-memory config so other tabs pick up changes on next render
             if dashboard_config is not None:
-                dashboard_config.infra = new_cfg.infra
-                dashboard_config.nodes = new_cfg.nodes
-                dashboard_config.database = new_cfg.database
-                dashboard_config.backend_defaults = new_cfg.backend_defaults
-                dashboard_config.server_defaults = new_cfg.server_defaults
-                dashboard_config.run_defaults = new_cfg.run_defaults
+                dashboard_config.infra = existing.infra
+                dashboard_config.nodes = existing.nodes
+                dashboard_config.database = existing.database
+                dashboard_config.backend_defaults = existing.backend_defaults
+                dashboard_config.server_defaults = existing.server_defaults
+                dashboard_config.run_defaults = existing.run_defaults
 
             return (
                 html.Span(

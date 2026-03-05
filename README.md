@@ -195,6 +195,25 @@ python -m apex dashboard postgresql://user:pass@localhost:5432/apex
 python -m apex dashboard results.db
 ```
 
+#### Dashboard Database Configuration
+
+The dashboard resolves its database connection using a 4-level priority chain:
+
+1. **CLI argument** — `python -m apex dashboard postgresql://...`
+2. **Environment variable** — `APEX_DATABASE_URL`
+3. **Config file** — `configs/dashboard.yaml`
+4. **Built-in default** — `postgresql://apex:apex@localhost:5432/apex`
+
+The config file is the recommended approach for persistent setups:
+
+```yaml
+# configs/dashboard.yaml
+database:
+  url: "postgresql://apexuser:pass@localhost:5432/apex"
+```
+
+You can also edit the database URL from the Settings tab in the dashboard. Note that `APEX_DATABASE_URL` overrides the config file at runtime.
+
 The dashboard opens at `http://localhost:8050` with 11 tabs:
 
 | Tab | Purpose |
@@ -405,4 +424,4 @@ python -m pytest tests/ -v
 
 ## Project
 
-APEX v1.2.0 — ~11,500 lines of Python across 51 source files, 141 tests, 11-tab interactive dashboard.
+APEX v1.2.1 — ~11,500 lines of Python across 51 source files, 141 tests, 11-tab interactive dashboard.
